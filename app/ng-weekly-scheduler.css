@@ -144,3 +144,7 @@ multi-slider slot.active {
 .grid-container.striped div:nth-child(even) {
   background: #fafafa;
 }
+
+.github-fork-ribbon:after {
+  line-height: 1em;
+}
