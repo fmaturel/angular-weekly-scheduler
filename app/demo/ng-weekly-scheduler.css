@@ -1,0 +1,146 @@
+multi-slider {
+  position: relative;
+  display: block;
+  height: 35px;
+  overflow: hidden;
+}
+
+multi-slider .slot {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  border-radius: 3px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 25px;
+  color: #fff;
+}
+
+multi-slider .ghost {
+  background: #5ab57a;
+  opacity: 0.6;
+  display: none;
+  cursor: pointer;
+}
+
+multi-slider:hover .ghost {
+  display: block;
+}
+
+multi-slider.slot-hover .ghost {
+  display: none;
+}
+
+multi-slider.dragging .ghost {
+  display: none;
+}
+
+multi-slider slot {
+  -webkit-transition: background 0.1s ease-in;
+  cursor: all-scroll;
+  min-width: 10px !important;
+  background: #4eb8d5;
+}
+
+multi-slider slot .handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+multi-slider slot .handle.left, multi-slider slot .handle.right {
+  width: 10px;
+  background: #000;
+  cursor: col-resize !important;
+  opacity: 0.1;
+}
+
+multi-slider slot .handle.left:hover, multi-slider slot .handle.right:hover {
+  opacity: 0.3;
+}
+
+multi-slider slot .handle.left {
+  left: 0;
+}
+
+multi-slider slot .handle.right {
+  right: 0;
+}
+
+multi-slider slot.active {
+  z-index: 10;
+  background: #5ab57a;
+  color: #fff;
+}
+
+.scheduler {
+  display: block;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.scheduler::after {
+  content:"";
+  display:block;
+  clear:both;
+}
+
+.scheduler .labels, .scheduler .schedule-area-container {
+  display: block;
+  float: left;
+}
+
+.scheduler .labels {
+  width: 15%;
+  color: #666;
+  border-right: 1px solid #ddd;
+}
+
+.scheduler .labels .srow {
+  padding: 0 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.scheduler .schedule-area-container {
+  overflow-x: scroll;
+  width: 85%;
+}
+
+.scheduler .srow {
+  position: relative;
+  height: 35px;
+  line-height: 35px;
+}
+
+.scheduler .timestamps {
+  color: #aaa;
+  position: relative;
+}
+
+.scheduler .timestamps .grid-container div {
+  border-right: 1px solid #eee;
+}
+
+.scheduler .timestamps .grid-container div:last-child {
+  border-right: none;
+}
+
+.grid-container {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.grid-container div {
+  float: left;
+  height: 34px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.grid-container.striped div:nth-child(even) {
+  background: #fafafa;
+}

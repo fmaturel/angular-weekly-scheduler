@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Angularjs weekly scheduler demo</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <link rel="stylesheet" href="ng-weekly-scheduler.css">
+</head>
+<body class="container-fluid" ng-app="demoApp">
+<div class="row" ng-controller="DemoController">
+
+  <div class="col-xs-10 col-xs-offset-1">
+
+    <h1>Angularjs weekly scheduler</h1>
+
+    <h2>1. Demo</h2>
+
+    <div>
+      <code>$scope.model</code>
+      <pre ng-bind="model | json" style="max-height: 300px;"></pre>
+    </div>
+
+    <div>
+      <weekly-scheduler class="scheduler" ng-model="model">
+        <div class="srow">{{item.label}}</div>
+      </weekly-scheduler>
+    </div>
+
+    <p>
+      <button class="btn btn-success" role="button" ng-click="model.items.push({label: 'New Campaign'})">Add new</button>
+    </p>
+
+  </div>
+</div>
+<script src="/vendor/angular/angular.js"></script>
+<script src="/vendor/angular-i18n/angular-locale_fr-fr.js"></script>
+<script src="/vendor/moment/moment.js"></script>
+<script src="/js/ng-weekly-scheduler.js"></script>
+<script src="demo-app.js"></script>
+</body>
+</html>

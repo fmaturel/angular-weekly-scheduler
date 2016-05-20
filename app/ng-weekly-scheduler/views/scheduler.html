@@ -1,0 +1,23 @@
+<div class="labels">
+  <div class="srow text-right">Month</div>
+  <div class="srow text-right">Week number</div>
+  <div ng-repeat="item in scheduleCtrl.model.items" inject></div>
+</div>
+
+<div class="schedule-area-container">
+  <div class="schedule-area">
+
+    <div class="srow timestamps">
+      <monthly-grid class="grid-container"></monthly-grid>
+    </div>
+
+    <div class="srow timestamps">
+      <weekly-grid class="grid-container"></weekly-grid>
+    </div>
+
+    <div class="srow" ng-repeat="item in scheduleCtrl.model.items">
+      <weekly-grid class="grid-container striped" no-text></weekly-grid>
+      <multi-slider index="$index" schedules="scheduleCtrl.model.schedules"></multi-slider>
+    </div>
+  </div>
+</div>
