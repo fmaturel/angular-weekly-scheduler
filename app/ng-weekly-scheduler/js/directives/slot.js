@@ -1,6 +1,6 @@
 angular.module('weeklyScheduler')
 
-  .directive('slot', ['$rootScope', '$log', function ($rootScope, $log) {
+  .directive('slot', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
     return {
       restrict: 'E',
       require: ['^weeklyScheduler', 'ngModel'],
@@ -14,22 +14,7 @@ angular.module('weeklyScheduler')
 
         var pixelToVal = function (pixel) {
           var percent = pixel / containerEl[0].clientWidth;
-          return Math.floor(percent * (conf.nbWeeks) + 0.5);
-        };
-
-        scope.endDrag = function () {
-
-          // this prevents user from accidentally
-          // adding new slot after resizing or dragging
-          setTimeout(function () {
-            containerEl.removeAttr('no-add');
-          }, 500);
-
-          element.removeClass('active');
-          containerEl.removeClass('dragging');
-
-          mergeOverlaps();
-          scope.$apply();
+          return Math.floor(percent * conf.nbWeeks + 0.5);
         };
 
         scope.startResizeStart = function () {
@@ -49,6 +34,21 @@ angular.module('weeklyScheduler')
           containerEl.attr('no-add', true);
 
           valuesOnDragStart = {start: ngModelCtrl.$viewValue.start, end: ngModelCtrl.$viewValue.end};
+        };
+
+        scope.endDrag = function () {
+
+          // this prevents user from accidentally
+          // adding new slot after resizing or dragging
+          setTimeout(function () {
+            containerEl.removeAttr('no-add');
+          }, 500);
+
+          element.removeClass('active');
+          containerEl.removeClass('dragging');
+
+          mergeOverlaps();
+          scope.$apply();
         };
 
         scope.resize = function (d) {
@@ -96,43 +96,47 @@ angular.module('weeklyScheduler')
         };
 
         var mergeOverlaps = function () {
-          scope.schedules.forEach(function (el) {
+          var schedules = schedulerCtrl.model.schedules;
+          schedules.forEach(function (el) {
             if (el !== scope.schedule && el.index === scope.schedule.index) {
 
               // model is inside another slot
               if (el.end >= scope.schedule.end && el.start <= scope.schedule.start) {
-                scope.schedules.splice(scope.schedules.indexOf(el), 1);
+                schedules.splice(schedules.indexOf(el), 1);
                 scope.schedule.end = el.end;
                 scope.schedule.start = el.start;
               }
               // model completely covers another slot
               else if (scope.schedule.end >= el.end && scope.schedule.start <= el.start) {
-                scope.schedules.splice(scope.schedules.indexOf(el), 1);
+                schedules.splice(schedules.indexOf(el), 1);
               }
               // another slot's end is inside current model
               else if (el.end >= scope.schedule.start && el.end <= scope.schedule.end) {
-                scope.schedules.splice(scope.schedules.indexOf(el), 1);
+                schedules.splice(schedules.indexOf(el), 1);
                 scope.schedule.start = el.start;
               }
               // another slot's start is inside current model
               else if (el.start >= scope.schedule.start && el.start <= scope.schedule.end) {
-                scope.schedules.splice(scope.schedules.indexOf(el), 1);
+                schedules.splice(schedules.indexOf(el), 1);
                 scope.schedule.end = el.end;
               }
             }
           });
         };
 
+        /**
+         * Delete on right click on slot
+         */
         var deleteSelf = function () {
           containerEl.removeClass('dragging');
           containerEl.removeClass('slot-hover');
-          scope.schedules.splice(scope.schedules.indexOf(scope.schedule), 1);
+          schedulerCtrl.model.schedules.splice(schedulerCtrl.model.schedules.indexOf(scope.schedule), 1);
+          ngModelCtrl.$render();
         };
 
         element.bind('contextmenu', function (e) {
           e.preventDefault();
           deleteSelf();
-          scope.$apply();
         });
 
         element.on('mouseover', function () {
@@ -146,10 +150,10 @@ angular.module('weeklyScheduler')
         // on init, merge overlaps
         mergeOverlaps(true);
 
-        //// UI -> Model ////////////////////////////////////
+        //// UI -> model ////////////////////////////////////
         ngModelCtrl.$parsers.push(function onUIChange(ui) {
-          ngModelCtrl.$modelValue.start = conf.minDate.clone().add(ui.start, 'week').toDate();
-          ngModelCtrl.$modelValue.end = conf.minDate.clone().add(ui.end, 'week').toDate();
+          ngModelCtrl.$modelValue.start = timeService.addWeek(conf.minDate, ui.start).toDate();
+          ngModelCtrl.$modelValue.end = timeService.addWeek(conf.minDate, ui.end).toDate();
           $log.debug('PARSER :', ngModelCtrl.$modelValue);
           return ngModelCtrl.$modelValue;
         });
@@ -157,8 +161,8 @@ angular.module('weeklyScheduler')
         //// model -> UI ////////////////////////////////////
         ngModelCtrl.$formatters.push(function onModelChange(model) {
           var ui = {
-            start: moment(model.start).diff(conf.minDate, 'week', true),
-            end: moment(model.end).diff(conf.minDate, 'week', true)
+            start: timeService.weekPreciseDiff(conf.minDate, moment(model.start), true),
+            end: timeService.weekPreciseDiff(conf.minDate, moment(model.end), true)
           };
           $log.debug('FORMATTER :', ui);
           return ui;
@@ -168,10 +172,10 @@ angular.module('weeklyScheduler')
           var ui = ngModelCtrl.$viewValue;
           $log.debug('RENDER :', ui, ui.end - ui.start + 1);
           element.css({
-            left: ui.start / (conf.nbWeeks) * 100 + '%',
-            width: (ui.end - ui.start) / (conf.nbWeeks) * 100 + '%'
+            left: ui.start / conf.nbWeeks * 100 + '%',
+            width: (ui.end - ui.start) / conf.nbWeeks * 100 + '%'
           });
-          scope.$eval(attrs.ngChange);
+          schedulerCtrl.on.change(scope.schedule);
         };
       }
     };

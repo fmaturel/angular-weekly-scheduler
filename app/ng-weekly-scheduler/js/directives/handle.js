@@ -1,12 +1,12 @@
 angular.module('weeklyScheduler')
   .directive('handle', ['$document', function ($document) {
     return {
+      restrict: 'A',
       scope: {
         ondrag: '=',
         ondragstop: '=',
         ondragstart: '='
       },
-      restrict: 'A',
       link: function (scope, element) {
 
         var x = 0;

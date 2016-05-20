@@ -21,9 +21,9 @@ angular.module('weeklyScheduler')
 
     return {
       restrict: 'E',
-      require: ['^weeklyScheduler'],
-      link: function (scope, element, attrs, ctrl) {
-        ctrl[0].$modelChangeListeners.push(function (newModel) {
+      require: '^weeklyScheduler',
+      link: function (scope, element, attrs, schedulerCtrl) {
+        schedulerCtrl.$modelChangeListeners.push(function (newModel) {
           doGrid(element, attrs, newModel);
         });
       }

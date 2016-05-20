@@ -1,3 +1,3 @@
 <div class="slot ghost">Add New</div>
 
-<slot class="slot" ng-repeat="schedule in schedules | byIndex:index" slots="schedules" ng-model="schedule"></slot>
+<slot class="slot" ng-repeat="schedule in scheduleCtrl.model.schedules | byIndex:$index" ng-model="schedule"></slot>

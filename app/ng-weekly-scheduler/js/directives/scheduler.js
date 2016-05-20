@@ -1,7 +1,7 @@
 /*global mouseScroll */
 angular.module('weeklyScheduler')
 
-  .directive('weeklyScheduler', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
+  .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
 
     /**
      * Configure the scheduler.
@@ -55,6 +55,13 @@ angular.module('weeklyScheduler')
           ngModelCtrl.$formatters.push(function onModelChange(model) {
             // Keep track of our model (use it in template)
             schedulerCtrl.model = model;
+
+            schedulerCtrl.on = {
+              change: function (i) {
+                var onChangeFunction = $parse(attrs.onChange);
+                onChangeFunction(scope)(i);
+              }
+            };
 
             // First calculate configuration
             schedulerCtrl.config = config(model.schedules);

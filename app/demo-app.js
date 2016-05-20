@@ -1,6 +1,7 @@
 angular.module('demoApp', ['weeklyScheduler'])
 
   .controller('DemoController', function ($scope, $timeout) {
+
     $scope.model = {
       items: [{label: 'Campaign 1'}],
       schedules: [
@@ -29,4 +30,8 @@ angular.module('demoApp', ['weeklyScheduler'])
         ]
       };
     }, 3000);
+
+    $scope.whenSomething = function (item) {
+      console.log('The model has changed!', item);
+    };
   });

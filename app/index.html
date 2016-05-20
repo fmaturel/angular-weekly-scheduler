@@ -21,7 +21,7 @@
     </div>
 
     <div>
-      <weekly-scheduler class="scheduler" ng-model="model">
+      <weekly-scheduler class="scheduler" ng-model="model" on-change="whenSomething" on-delete="whenSomething">
         <div class="srow">{{item.label}}</div>
       </weekly-scheduler>
     </div>

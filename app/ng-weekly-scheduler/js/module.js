@@ -7,11 +7,9 @@ function mouseScroll(el, delta) {
   el.addEventListener('mousewheel', function (event) {
     if (el.doScroll) {
       el.doScroll(event.wheelDelta > 0 ? 'left' : 'right');
-    }
-    else if ((event.wheelDelta || event.detail) > 0) {
+    } else if ((event.wheelDelta || event.detail) > 0) {
       el.scrollLeft -= delta;
-    }
-    else {
+    } else {
       el.scrollLeft += delta;
     }
     return false;

@@ -12,18 +12,14 @@ angular.module('weeklyScheduler')
     };
   }])
 
-  .directive('multiSlider', [function () {
+  .directive('multiSlider', ['weeklySchedulerTimeService', function (timeService) {
     return {
       restrict: 'E',
-      require: ['^weeklyScheduler'],
-      scope: {
-        index: '=',
-        schedules: '='
-      },
+      require: '^weeklyScheduler',
       templateUrl: 'ng-weekly-scheduler/views/multi-slider.html',
-      link: function (scope, element, attrs, ctrls) {
-        var conf = ctrls[0].config;
-        
+      link: function (scope, element, attrs, schedulerCtrl) {
+        var conf = schedulerCtrl.config;
+
         // The default scheduler block size when adding a new item
         var defaultNewScheduleSize = parseInt(attrs.size) || 8;
 
@@ -45,14 +41,13 @@ angular.module('weeklyScheduler')
           start = start >= 0 ? start : 0;
           end = end <= conf.nbWeeks ? end : conf.nbWeeks;
 
-          var startDate = conf.minDate.clone().add(start, 'week');
-          var endDate = conf.minDate.clone().add(end, 'week');
+          var startDate = timeService.addWeek(conf.minDate, start);
+          var endDate = timeService.addWeek(conf.minDate, end);
 
           scope.$apply(function () {
-            scope.schedules.push({index: scope.index, start: startDate.toDate(), end: endDate.toDate()});
+            schedulerCtrl.model.schedules.push({index: scope.$index, start: startDate.toDate(), end: endDate.toDate()});
           });
         };
-
 
         var hoverElement = angular.element(element.find('div')[0]);
         var hoverElementWidth = valToPixel(defaultNewScheduleSize);
