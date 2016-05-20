@@ -1,3 +1,4 @@
+/*global GRID_TEMPLATE */
 angular.module('weeklyScheduler')
   .directive('weeklyGrid', [function () {
 

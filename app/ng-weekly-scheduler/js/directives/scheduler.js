@@ -1,3 +1,4 @@
+/*global mouseScroll */
 angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
