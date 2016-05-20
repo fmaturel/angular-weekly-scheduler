@@ -52,7 +52,7 @@
             livereload: '<%= connect.options.livereload %>'
           },
           files: [
-            '<%= yeoman.app %>/demo/*.*'
+            '<%= yeoman.app %>/*.*'
           ]
         }
       },
@@ -82,7 +82,7 @@
         livereload: {
           options: {
             open: {
-              target: 'http://localhost:9090/demo'
+              target: 'http://localhost:9090'
             },
             middleware: function (connect) {
               return [
@@ -95,7 +95,7 @@
         },
         test: {
           options: {
-            port: 9031,
+            port: 9091,
             middleware: function () {
               return [
                 serveStatic(appConfig.test),
@@ -108,7 +108,7 @@
         dist: {
           options: {
             open: {
-              target: 'http://localhost:9030/demo'
+              target: 'http://localhost:9090'
             },
             base: '<%= yeoman.dist %>'
           }
@@ -156,14 +156,12 @@
             cwd: '<%= yeoman.app %>',
             dest: '<%= yeoman.dist %>',
             src: [
-              '*.html',
-              'images/**',
-              'demo/**'
+              '*.*'
             ]
           }, {
             expand: true,
             cwd: 'node_modules',
-            src: ['angular/angular*.js', 'angular-route/angular-route*.js'],
+            src: ['angular/angular*.js','angular-i18n/angular-locale_fr-fr.js', 'moment/moment.js'],
             dest: '<%= yeoman.dist %>/vendor'
           }]
         }
