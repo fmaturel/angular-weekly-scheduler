@@ -1,7 +1,7 @@
 <div class="labels">
   <div class="srow text-right">Month</div>
   <div class="srow text-right">Week number</div>
-  <div ng-repeat="item in scheduleCtrl.model.items" inject></div>
+  <div ng-repeat="item in schedulerCtrl.items" inject></div>
 </div>
 
 <div class="schedule-area-container">
@@ -15,7 +15,7 @@
       <weekly-grid class="grid-container"></weekly-grid>
     </div>
 
-    <div class="srow" ng-repeat="item in scheduleCtrl.model.items">
+    <div class="srow" ng-repeat="item in schedulerCtrl.items">
       <weekly-grid class="grid-container striped" no-text></weekly-grid>
       <multi-slider></multi-slider>
     </div>

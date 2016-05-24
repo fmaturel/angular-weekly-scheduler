@@ -96,48 +96,48 @@ angular.module('weeklyScheduler')
         };
 
         var mergeOverlaps = function () {
-          var schedules = schedulerCtrl.model.schedules;
+          var schedule = scope.schedule;
+          var schedules = scope.item.schedules;
           schedules.forEach(function (el) {
-            if (el !== scope.schedule && el.index === scope.schedule.index) {
-
+            if (el !== schedule) {
               // model is inside another slot
-              if (el.end >= scope.schedule.end && el.start <= scope.schedule.start) {
+              if (el.end >= schedule.end && el.start <= schedule.start) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.end = el.end;
-                scope.schedule.start = el.start;
+                schedule.end = el.end;
+                schedule.start = el.start;
               }
               // model completely covers another slot
-              else if (scope.schedule.end >= el.end && scope.schedule.start <= el.start) {
+              else if (schedule.end >= el.end && schedule.start <= el.start) {
                 schedules.splice(schedules.indexOf(el), 1);
               }
               // another slot's end is inside current model
-              else if (el.end >= scope.schedule.start && el.end <= scope.schedule.end) {
+              else if (el.end >= schedule.start && el.end <= schedule.end) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.start = el.start;
+                schedule.start = el.start;
               }
               // another slot's start is inside current model
-              else if (el.start >= scope.schedule.start && el.start <= scope.schedule.end) {
+              else if (el.start >= schedule.start && el.start <= schedule.end) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.end = el.end;
+                schedule.end = el.end;
               }
             }
           });
         };
 
-        /**
-         * Delete on right click on slot
-         */
-        var deleteSelf = function () {
-          containerEl.removeClass('dragging');
-          containerEl.removeClass('slot-hover');
-          schedulerCtrl.model.schedules.splice(schedulerCtrl.model.schedules.indexOf(scope.schedule), 1);
-          ngModelCtrl.$render();
-        };
-
-        element.bind('contextmenu', function (e) {
-          e.preventDefault();
-          deleteSelf();
-        });
+        // /**
+        //  * Delete on right click on slot
+        //  */
+        // var deleteSelf = function () {
+        //   containerEl.removeClass('dragging');
+        //   containerEl.removeClass('slot-hover');
+        //   scope.item.schedules.splice(scope.item.schedules.indexOf(scope.schedule), 1);
+        //   ngModelCtrl.$render();
+        // };
+        //
+        // element.bind('contextmenu', function (e) {
+        //   e.preventDefault();
+        //   deleteSelf();
+        // });
 
         element.on('mouseover', function () {
           containerEl.addClass('slot-hover');

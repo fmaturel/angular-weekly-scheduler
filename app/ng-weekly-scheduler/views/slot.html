@@ -1,5 +1,5 @@
-<div title="{{::schedule.start | date}} - {{::schedule.end | date}}">
+<div title="{{schedule.start | date}} - {{schedule.end | date}}">
   <div class="handle left" ondrag="resize" ondragstart="startResizeStart" ondragstop="endDrag" handle></div>
-  <div class="content" ondrag="drag" ondragstart="startDrag" ondragstop="endDrag" handle>{{::schedule.start | date}} - {{::schedule.end | date}}</div>
+  <div ondrag="drag" ondragstart="startDrag" ondragstop="endDrag" handle>{{schedule.start | date}} - {{schedule.end | date}}</div>
   <div class="handle right" ondrag="resize" ondragstart="startResizeEnd" ondragstop="endDrag" handle></div>
 </div>

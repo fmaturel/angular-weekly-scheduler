@@ -45,7 +45,11 @@ angular.module('weeklyScheduler')
           var endDate = timeService.addWeek(conf.minDate, end);
 
           scope.$apply(function () {
-            schedulerCtrl.model.schedules.push({index: scope.$index, start: startDate.toDate(), end: endDate.toDate()});
+            var item = scope.item;
+            if (!item.schedules) {
+              item.schedules = [];
+            }
+            item.schedules.push({start: startDate.toDate(), end: endDate.toDate()});
           });
         };
 

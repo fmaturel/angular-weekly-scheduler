@@ -196,7 +196,11 @@ angular.module('weeklyScheduler')
           var endDate = timeService.addWeek(conf.minDate, end);
 
           scope.$apply(function () {
-            schedulerCtrl.model.schedules.push({index: scope.$index, start: startDate.toDate(), end: endDate.toDate()});
+            var item = scope.item;
+            if (!item.schedules) {
+              item.schedules = [];
+            }
+            item.schedules.push({start: startDate.toDate(), end: endDate.toDate()});
           });
         };
 
@@ -240,16 +244,17 @@ angular.module('weeklyScheduler')
      */
     function config(schedules) {
       var now = moment();
+      var nextYear = now.clone().add(1, 'year');
 
       // Calculate min date of all scheduled events
-      var minDate = schedules.reduce(function (minDate, slot) {
+      var minDate = (schedules ? schedules.reduce(function (minDate, slot) {
         return timeService.compare(slot.start, 'isBefore', minDate);
-      }, now).startOf('week');
+      }, now) : now).startOf('week');
 
       // Calculate max date of all scheduled events
-      var maxDate = schedules.reduce(function (maxDate, slot) {
+      var maxDate = (schedules ? schedules.reduce(function (maxDate, slot) {
         return timeService.compare(slot.end, 'isAfter', maxDate);
-      }, now.clone().add(1, 'year')).endOf('week');
+      }, nextYear) : nextYear).endOf('week');
 
       // Calculate nb of weeks covered by minDate => maxDate
       var nbWeeks = timeService.weekDiff(minDate, maxDate);
@@ -272,7 +277,7 @@ angular.module('weeklyScheduler')
         // Will hang our model change listeners
         this.$modelChangeListeners = [];
       }],
-      controllerAs: 'scheduleCtrl',
+      controllerAs: 'schedulerCtrl',
       link: function (scope, element, attrs, ctrls) {
         var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
 
@@ -283,26 +288,32 @@ angular.module('weeklyScheduler')
           mouseScroll(el, 20);
 
           ngModelCtrl.$formatters.push(function onModelChange(model) {
-            // Keep track of our model (use it in template)
-            schedulerCtrl.model = model;
+            if (model && model.items) {
+              // Keep track of our model (use it in template)
+              schedulerCtrl.items = model.items;
 
-            schedulerCtrl.on = {
-              change: function (i) {
-                var onChangeFunction = $parse(attrs.onChange);
-                onChangeFunction(scope)(i);
-              }
-            };
+              schedulerCtrl.on = {
+                change: function (i) {
+                  var onChangeFunction = $parse(attrs.onChange)(scope);
+                  if (angular.isFunction(onChangeFunction)) {
+                    return onChangeFunction(i);
+                  }
+                }
+              };
 
-            // First calculate configuration
-            schedulerCtrl.config = config(model.schedules);
+              // First calculate configuration
+              schedulerCtrl.config = config(model.items.reduce(function (result, item) {
+                return result.concat(item.schedules);
+              }, []));
 
-            // Then resize schedule area knowing the number of weeks in scope
-            el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
+              // Then resize schedule area knowing the number of weeks in scope
+              el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
 
-            // Finally, run the sub directives listeners
-            schedulerCtrl.$modelChangeListeners.forEach(function (callback) {
-              callback(schedulerCtrl.config);
-            });
+              // Finally, run the sub directives listeners
+              schedulerCtrl.$modelChangeListeners.forEach(function (callback) {
+                callback(schedulerCtrl.config);
+              });
+            }
           });
         }
       }
@@ -406,48 +417,48 @@ angular.module('weeklyScheduler')
         };
 
         var mergeOverlaps = function () {
-          var schedules = schedulerCtrl.model.schedules;
+          var schedule = scope.schedule;
+          var schedules = scope.item.schedules;
           schedules.forEach(function (el) {
-            if (el !== scope.schedule && el.index === scope.schedule.index) {
-
+            if (el !== schedule) {
               // model is inside another slot
-              if (el.end >= scope.schedule.end && el.start <= scope.schedule.start) {
+              if (el.end >= schedule.end && el.start <= schedule.start) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.end = el.end;
-                scope.schedule.start = el.start;
+                schedule.end = el.end;
+                schedule.start = el.start;
               }
               // model completely covers another slot
-              else if (scope.schedule.end >= el.end && scope.schedule.start <= el.start) {
+              else if (schedule.end >= el.end && schedule.start <= el.start) {
                 schedules.splice(schedules.indexOf(el), 1);
               }
               // another slot's end is inside current model
-              else if (el.end >= scope.schedule.start && el.end <= scope.schedule.end) {
+              else if (el.end >= schedule.start && el.end <= schedule.end) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.start = el.start;
+                schedule.start = el.start;
               }
               // another slot's start is inside current model
-              else if (el.start >= scope.schedule.start && el.start <= scope.schedule.end) {
+              else if (el.start >= schedule.start && el.start <= schedule.end) {
                 schedules.splice(schedules.indexOf(el), 1);
-                scope.schedule.end = el.end;
+                schedule.end = el.end;
               }
             }
           });
         };
 
-        /**
-         * Delete on right click on slot
-         */
-        var deleteSelf = function () {
-          containerEl.removeClass('dragging');
-          containerEl.removeClass('slot-hover');
-          schedulerCtrl.model.schedules.splice(schedulerCtrl.model.schedules.indexOf(scope.schedule), 1);
-          ngModelCtrl.$render();
-        };
-
-        element.bind('contextmenu', function (e) {
-          e.preventDefault();
-          deleteSelf();
-        });
+        // /**
+        //  * Delete on right click on slot
+        //  */
+        // var deleteSelf = function () {
+        //   containerEl.removeClass('dragging');
+        //   containerEl.removeClass('slot-hover');
+        //   scope.item.schedules.splice(scope.item.schedules.indexOf(scope.schedule), 1);
+        //   ngModelCtrl.$render();
+        // };
+        //
+        // element.bind('contextmenu', function (e) {
+        //   e.preventDefault();
+        //   deleteSelf();
+        // });
 
         element.on('mouseover', function () {
           containerEl.addClass('slot-hover');
@@ -564,16 +575,16 @@ angular.module('ngWeeklySchedulerTemplates', ['ng-weekly-scheduler/views/multi-s
 
 angular.module('ng-weekly-scheduler/views/multi-slider.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/multi-slider.html',
-    '<div class="slot ghost">Add New</div><slot class=slot ng-repeat="schedule in scheduleCtrl.model.schedules | byIndex:$index" ng-model=schedule></slot>');
+    '<div class="slot ghost">Add New</div><slot class=slot ng-repeat="schedule in item.schedules" ng-model=schedule></slot>');
 }]);
 
 angular.module('ng-weekly-scheduler/views/scheduler.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/scheduler.html',
-    '<div class=labels><div class="srow text-right">Month</div><div class="srow text-right">Week number</div><div ng-repeat="item in scheduleCtrl.model.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class=srow ng-repeat="item in scheduleCtrl.model.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider></multi-slider></div></div></div>');
+    '<div class=labels><div class="srow text-right">Month</div><div class="srow text-right">Week number</div><div ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class=srow ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider></multi-slider></div></div></div>');
 }]);
 
 angular.module('ng-weekly-scheduler/views/slot.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/slot.html',
-    '<div title="{{::schedule.start | date}} - {{::schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div class=content ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{::schedule.start | date}} - {{::schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div></div>');
+    '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div></div>');
 }]);
 }( window ));

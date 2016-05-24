@@ -10,16 +10,17 @@ angular.module('weeklyScheduler')
      */
     function config(schedules) {
       var now = moment();
+      var nextYear = now.clone().add(1, 'year');
 
       // Calculate min date of all scheduled events
-      var minDate = schedules.reduce(function (minDate, slot) {
+      var minDate = (schedules ? schedules.reduce(function (minDate, slot) {
         return timeService.compare(slot.start, 'isBefore', minDate);
-      }, now).startOf('week');
+      }, now) : now).startOf('week');
 
       // Calculate max date of all scheduled events
-      var maxDate = schedules.reduce(function (maxDate, slot) {
+      var maxDate = (schedules ? schedules.reduce(function (maxDate, slot) {
         return timeService.compare(slot.end, 'isAfter', maxDate);
-      }, now.clone().add(1, 'year')).endOf('week');
+      }, nextYear) : nextYear).endOf('week');
 
       // Calculate nb of weeks covered by minDate => maxDate
       var nbWeeks = timeService.weekDiff(minDate, maxDate);
@@ -42,7 +43,7 @@ angular.module('weeklyScheduler')
         // Will hang our model change listeners
         this.$modelChangeListeners = [];
       }],
-      controllerAs: 'scheduleCtrl',
+      controllerAs: 'schedulerCtrl',
       link: function (scope, element, attrs, ctrls) {
         var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
 
@@ -53,26 +54,32 @@ angular.module('weeklyScheduler')
           mouseScroll(el, 20);
 
           ngModelCtrl.$formatters.push(function onModelChange(model) {
-            // Keep track of our model (use it in template)
-            schedulerCtrl.model = model;
+            if (model && model.items) {
+              // Keep track of our model (use it in template)
+              schedulerCtrl.items = model.items;
 
-            schedulerCtrl.on = {
-              change: function (i) {
-                var onChangeFunction = $parse(attrs.onChange);
-                onChangeFunction(scope)(i);
-              }
-            };
+              schedulerCtrl.on = {
+                change: function (i) {
+                  var onChangeFunction = $parse(attrs.onChange)(scope);
+                  if (angular.isFunction(onChangeFunction)) {
+                    return onChangeFunction(i);
+                  }
+                }
+              };
 
-            // First calculate configuration
-            schedulerCtrl.config = config(model.schedules);
+              // First calculate configuration
+              schedulerCtrl.config = config(model.items.reduce(function (result, item) {
+                return result.concat(item.schedules);
+              }, []));
 
-            // Then resize schedule area knowing the number of weeks in scope
-            el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
+              // Then resize schedule area knowing the number of weeks in scope
+              el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
 
-            // Finally, run the sub directives listeners
-            schedulerCtrl.$modelChangeListeners.forEach(function (callback) {
-              callback(schedulerCtrl.config);
-            });
+              // Finally, run the sub directives listeners
+              schedulerCtrl.$modelChangeListeners.forEach(function (callback) {
+                callback(schedulerCtrl.config);
+              });
+            }
           });
         }
       }
