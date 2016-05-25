@@ -23,10 +23,6 @@ angular.module('weeklyScheduler')
         // The default scheduler block size when adding a new item
         var defaultNewScheduleSize = parseInt(attrs.size) || 8;
 
-        var elScheduleArea = document.querySelector('.schedule-area-container');
-
-        var elOffX = element[0].getBoundingClientRect().left;
-
         var valToPixel = function (val) {
           var percent = val / (conf.nbWeeks);
           return Math.floor(percent * element[0].clientWidth + 0.5);
@@ -61,20 +57,22 @@ angular.module('weeklyScheduler')
         });
 
         element.on('mousemove', function (e) {
+          var elOffX = element[0].getBoundingClientRect().left;
+
           hoverElement.css({
-            left: elScheduleArea.scrollLeft + e.pageX - elOffX - hoverElementWidth / 2 + 'px'
+            left: e.pageX - elOffX - hoverElementWidth / 2 + 'px'
           });
         });
 
         hoverElement.on('click', function (event) {
           if (!element.attr('no-add')) {
-            var pixelOnClick = elScheduleArea.scrollLeft + event.pageX - elOffX;
+            var elOffX = element[0].getBoundingClientRect().left;
+            var pixelOnClick = event.pageX - elOffX;
             var valOnClick = pixelToVal(pixelOnClick);
 
             var start = Math.round(valOnClick - defaultNewScheduleSize / 2);
             var end = start + defaultNewScheduleSize;
 
-            console.log(start, end);
             addSlot(start, end);
           }
         });

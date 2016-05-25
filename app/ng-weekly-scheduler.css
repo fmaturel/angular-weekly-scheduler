@@ -12,7 +12,6 @@ multi-slider .slot {
   border-radius: 3px;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
   line-height: 25px;
   color: #fff;
 }
@@ -36,39 +35,77 @@ multi-slider.dragging .ghost {
   display: none;
 }
 
-multi-slider slot {
+multi-slider weekly-slot {
   -webkit-transition: background 0.1s ease-in;
   cursor: all-scroll;
   min-width: 10px !important;
   background: #4eb8d5;
 }
 
-multi-slider slot .handle {
+multi-slider weekly-slot.disable {
+  cursor: not-allowed;
+  color: #666;
+  background: #c0c0c0;
+}
+
+multi-slider weekly-slot .handle {
   position: absolute;
   top: 0;
   bottom: 0;
 }
 
-multi-slider slot .handle.left, multi-slider slot .handle.right {
+multi-slider weekly-slot .handle.left, multi-slider weekly-slot .handle.right {
   width: 10px;
   background: #000;
-  cursor: col-resize !important;
+  cursor: col-resize;
   opacity: 0.1;
 }
 
-multi-slider slot .handle.left:hover, multi-slider slot .handle.right:hover {
+multi-slider weekly-slot.disable .handle {
+  cursor: not-allowed;
+}
+
+multi-slider weekly-slot .handle.left:hover, multi-slider weekly-slot .handle.right:hover {
   opacity: 0.3;
 }
 
-multi-slider slot .handle.left {
+multi-slider weekly-slot .handle.left {
   left: 0;
 }
 
-multi-slider slot .handle.right {
+multi-slider weekly-slot .handle.right {
   right: 0;
 }
 
-multi-slider slot.active {
+multi-slider weekly-slot:not(.disable) .remove {
+  display: none;
+  cursor: pointer;
+  float: right;
+  margin-right: -30px;
+  width: 25px;
+  background: red;
+  border-radius: 20%;
+  opacity: 0.5;
+  transform: translateY(-100%);
+}
+
+multi-slider weekly-slot:not(.disable) .remove:before {
+  position: absolute;
+  content: "";
+  left: -5px;
+  width: 10px;
+  height: 25px;
+}
+
+multi-slider weekly-slot:hover .remove {
+  display: block;
+}
+
+multi-slider weekly-slot .remove:hover {
+  opacity: 1;
+}
+
+multi-slider weekly-slot.active {
   z-index: 10;
   background: #5ab57a;
   color: #fff;
@@ -78,6 +115,7 @@ multi-slider slot.active {
   display: block;
   background: #fff;
   border: 1px solid #ccc;
+  margin-bottom: 10px;
 }
 
 .scheduler::after {

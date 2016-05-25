@@ -6,14 +6,37 @@ angular.module('weeklyScheduler', ['ngWeeklySchedulerTemplates']);
 /* jshint -W098 */
 var GRID_TEMPLATE = angular.element('<div class="grid-item"></div>');
 
+var isCtrl;
+
+function ctrlCheck(e) {
+  if (e.which === 17) {
+    isCtrl = e.type === 'keydown';
+  }
+}
+
 function mouseScroll(el, delta) {
-  el.addEventListener('mousewheel', function (event) {
-    if (el.doScroll) {
-      el.doScroll(event.wheelDelta > 0 ? 'left' : 'right');
-    } else if ((event.wheelDelta || event.detail) > 0) {
-      el.scrollLeft -= delta;
+
+  window.addEventListener('keydown', ctrlCheck);
+  window.addEventListener('keyup', ctrlCheck);
+
+  el.addEventListener('mousewheel', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isCtrl) {
+      var style = el.firstChild.style, currentWidth = parseInt(style.width);
+      if ((e.wheelDelta || e.detail) > 0) {
+        style.width = (currentWidth + 2 * delta) + '%';
+      } else {
+        var width = currentWidth - 2 * delta;
+        style.width = (width > 100 ? width : 100) + '%';
+      }
     } else {
-      el.scrollLeft += delta;
+      if ((e.wheelDelta || e.detail) > 0) {
+        el.scrollLeft -= delta;
+      } else {
+        el.scrollLeft += delta;
+      }
     }
     return false;
   });
@@ -116,7 +139,9 @@ angular.module('weeklyScheduler')
 
         function mousemove(event) {
           var delta = event.pageX - x;
-          scope.ondrag(delta);
+          if (scope.ondrag) {
+            scope.ondrag(delta);
+          }
         }
 
         function mouseup() {
@@ -174,10 +199,6 @@ angular.module('weeklyScheduler')
         // The default scheduler block size when adding a new item
         var defaultNewScheduleSize = parseInt(attrs.size) || 8;
 
-        var elScheduleArea = document.querySelector('.schedule-area-container');
-
-        var elOffX = element[0].getBoundingClientRect().left;
-
         var valToPixel = function (val) {
           var percent = val / (conf.nbWeeks);
           return Math.floor(percent * element[0].clientWidth + 0.5);
@@ -212,20 +233,22 @@ angular.module('weeklyScheduler')
         });
 
         element.on('mousemove', function (e) {
+          var elOffX = element[0].getBoundingClientRect().left;
+
           hoverElement.css({
-            left: elScheduleArea.scrollLeft + e.pageX - elOffX - hoverElementWidth / 2 + 'px'
+            left: e.pageX - elOffX - hoverElementWidth / 2 + 'px'
           });
         });
 
         hoverElement.on('click', function (event) {
           if (!element.attr('no-add')) {
-            var pixelOnClick = elScheduleArea.scrollLeft + event.pageX - elOffX;
+            var elOffX = element[0].getBoundingClientRect().left;
+            var pixelOnClick = event.pageX - elOffX;
             var valOnClick = pixelToVal(pixelOnClick);
 
             var start = Math.round(valOnClick - defaultNewScheduleSize / 2);
             var end = start + defaultNewScheduleSize;
 
-            console.log(start, end);
             addSlot(start, end);
           }
         });
@@ -242,7 +265,7 @@ angular.module('weeklyScheduler')
      * @param schedules
      * @returns {{minDate: *, maxDate: *, nbWeeks: *}}
      */
-    function config(schedules) {
+    function config(schedules, options) {
       var now = moment();
       var nextYear = now.clone().add(1, 'year');
 
@@ -259,27 +282,25 @@ angular.module('weeklyScheduler')
       // Calculate nb of weeks covered by minDate => maxDate
       var nbWeeks = timeService.weekDiff(minDate, maxDate);
 
+      var result = angular.extend(options, {minDate: minDate, maxDate: maxDate, nbWeeks: nbWeeks});
       // Log configuration
-      $log.debug('Weekly Scheduler configuration:',
-        'minDate:', minDate.format(timeService.const.FORMAT),
-        'maxDate:', maxDate.format(timeService.const.FORMAT),
-        'nbWeeks:', nbWeeks);
+      $log.debug('Weekly Scheduler configuration:', result);
 
-      return {minDate: minDate, maxDate: maxDate, nbWeeks: nbWeeks};
+      return result;
     }
 
     return {
       restrict: 'E',
       require: ['weeklyScheduler', 'ngModel'],
       transclude: true,
-      templateUrl: 'ng-weekly-scheduler/views/scheduler.html',
+      templateUrl: 'ng-weekly-scheduler/views/weekly-scheduler.html',
       controller: [function () {
         // Will hang our model change listeners
         this.$modelChangeListeners = [];
       }],
       controllerAs: 'schedulerCtrl',
       link: function (scope, element, attrs, ctrls) {
-        var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
+        var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1], options = {};
 
         var el = element[0].querySelector('.schedule-area-container');
 
@@ -287,31 +308,50 @@ angular.module('weeklyScheduler')
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
 
-          ngModelCtrl.$formatters.push(function onModelChange(model) {
-            if (model && model.items) {
+          attrs.$observe('options', function () {
+            options = angular.extend(options, $parse(attrs.options)(scope));
+            console.log('options changed', options);
+          });
+
+          ngModelCtrl.$formatters.push(function onModelChange(items) {
+            // Check items are present
+            if (items) {
+
+              // Check items are in an Array
+              if (!angular.isArray(items)) {
+                throw 'You should use weekly-scheduler directive with an Array of items';
+              }
+
               // Keep track of our model (use it in template)
-              schedulerCtrl.items = model.items;
+              schedulerCtrl.items = items;
+
+              // First calculate configuration
+              schedulerCtrl.config = config(items.reduce(function (result, item) {
+                var schedules = item.schedules;
+
+                return result.concat(schedules && schedules.length ?
+                  // If in multiSlider mode, ensure a schedule array is present on each item
+                  // Else only use first element of schedule array
+                  (options.monoSchedule ? item.schedules = [schedules[0]] : schedules) :
+                  item.schedules = []
+                );
+              }, []), options);
 
               schedulerCtrl.on = {
-                change: function (i) {
+                change: function (itemIndex, scheduleIndex, scheduleValue) {
                   var onChangeFunction = $parse(attrs.onChange)(scope);
                   if (angular.isFunction(onChangeFunction)) {
-                    return onChangeFunction(i);
+                    return onChangeFunction(itemIndex, scheduleIndex, scheduleValue);
                   }
                 }
               };
-
-              // First calculate configuration
-              schedulerCtrl.config = config(model.items.reduce(function (result, item) {
-                return result.concat(item.schedules);
-              }, []));
 
               // Then resize schedule area knowing the number of weeks in scope
               el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
 
               // Finally, run the sub directives listeners
-              schedulerCtrl.$modelChangeListeners.forEach(function (callback) {
-                callback(schedulerCtrl.config);
+              schedulerCtrl.$modelChangeListeners.forEach(function (listener) {
+                listener(schedulerCtrl.config);
               });
             }
           });
@@ -321,11 +361,11 @@ angular.module('weeklyScheduler')
   }]);
 angular.module('weeklyScheduler')
 
-  .directive('slot', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
+  .directive('weeklySlot', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
     return {
       restrict: 'E',
       require: ['^weeklyScheduler', 'ngModel'],
-      templateUrl: 'ng-weekly-scheduler/views/slot.html',
+      templateUrl: 'ng-weekly-scheduler/views/weekly-slot.html',
       link: function (scope, element, attrs, ctrls) {
         var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
         var conf = schedulerCtrl.config;
@@ -336,84 +376,6 @@ angular.module('weeklyScheduler')
         var pixelToVal = function (pixel) {
           var percent = pixel / containerEl[0].clientWidth;
           return Math.floor(percent * conf.nbWeeks + 0.5);
-        };
-
-        scope.startResizeStart = function () {
-          resizeDirectionIsStart = true;
-          scope.startDrag();
-        };
-
-        scope.startResizeEnd = function () {
-          resizeDirectionIsStart = false;
-          scope.startDrag();
-        };
-
-        scope.startDrag = function () {
-          element.addClass('active');
-
-          containerEl.addClass('dragging');
-          containerEl.attr('no-add', true);
-
-          valuesOnDragStart = {start: ngModelCtrl.$viewValue.start, end: ngModelCtrl.$viewValue.end};
-        };
-
-        scope.endDrag = function () {
-
-          // this prevents user from accidentally
-          // adding new slot after resizing or dragging
-          setTimeout(function () {
-            containerEl.removeAttr('no-add');
-          }, 500);
-
-          element.removeClass('active');
-          containerEl.removeClass('dragging');
-
-          mergeOverlaps();
-          scope.$apply();
-        };
-
-        scope.resize = function (d) {
-          var ui = ngModelCtrl.$viewValue;
-          var delta = pixelToVal(d);
-
-          if (resizeDirectionIsStart) {
-            var newStart = Math.round(valuesOnDragStart.start + delta);
-
-            if (ui.start !== newStart && newStart <= ui.end - 1 && newStart >= 0) {
-              ngModelCtrl.$setViewValue({
-                start: newStart,
-                end: ui.end
-              });
-              ngModelCtrl.$render();
-            }
-          } else {
-            var newEnd = Math.round(valuesOnDragStart.end + delta);
-
-            if (ui.end !== newEnd && newEnd >= ui.start + 1 && newEnd <= conf.nbWeeks) {
-              ngModelCtrl.$setViewValue({
-                start: ui.start,
-                end: newEnd
-              });
-              ngModelCtrl.$render();
-            }
-          }
-        };
-
-        scope.drag = function (d) {
-          var ui = ngModelCtrl.$viewValue;
-          var delta = pixelToVal(d);
-          var duration = valuesOnDragStart.end - valuesOnDragStart.start;
-
-          var newStart = Math.round(valuesOnDragStart.start + delta);
-          var newEnd = Math.round(newStart + duration);
-
-          if (ui.start !== newStart && newStart >= 0 && newEnd <= conf.nbWeeks) {
-            ngModelCtrl.$setViewValue({
-              start: newStart,
-              end: newEnd
-            });
-            ngModelCtrl.$render();
-          }
         };
 
         var mergeOverlaps = function () {
@@ -445,20 +407,21 @@ angular.module('weeklyScheduler')
           });
         };
 
-        // /**
-        //  * Delete on right click on slot
-        //  */
-        // var deleteSelf = function () {
-        //   containerEl.removeClass('dragging');
-        //   containerEl.removeClass('slot-hover');
-        //   scope.item.schedules.splice(scope.item.schedules.indexOf(scope.schedule), 1);
-        //   ngModelCtrl.$render();
-        // };
-        //
-        // element.bind('contextmenu', function (e) {
-        //   e.preventDefault();
-        //   deleteSelf();
-        // });
+        /**
+         * Delete on right click on slot
+         */
+        var deleteSelf = function () {
+          containerEl.removeClass('dragging');
+          containerEl.removeClass('slot-hover');
+          scope.item.schedules.splice(scope.item.schedules.indexOf(scope.schedule), 1);
+          containerEl.find('weekly-slot').remove();
+          scope.$apply();
+        };
+
+        element.find('span').on('click', function (e) {
+          e.preventDefault();
+          deleteSelf();
+        });
 
         element.on('mouseover', function () {
           containerEl.addClass('slot-hover');
@@ -468,6 +431,87 @@ angular.module('weeklyScheduler')
           containerEl.removeClass('slot-hover');
         });
 
+
+        if (scope.item.editable !== false) {
+          scope.startResizeStart = function () {
+            resizeDirectionIsStart = true;
+            scope.startDrag();
+          };
+
+          scope.startResizeEnd = function () {
+            resizeDirectionIsStart = false;
+            scope.startDrag();
+          };
+
+          scope.startDrag = function () {
+            element.addClass('active');
+
+            containerEl.addClass('dragging');
+            containerEl.attr('no-add', true);
+
+            valuesOnDragStart = {start: ngModelCtrl.$viewValue.start, end: ngModelCtrl.$viewValue.end};
+          };
+
+          scope.endDrag = function () {
+
+            // this prevents user from accidentally
+            // adding new slot after resizing or dragging
+            setTimeout(function () {
+              containerEl.removeAttr('no-add');
+            }, 500);
+
+            element.removeClass('active');
+            containerEl.removeClass('dragging');
+
+            mergeOverlaps();
+            scope.$apply();
+          };
+
+          scope.resize = function (d) {
+            var ui = ngModelCtrl.$viewValue;
+            var delta = pixelToVal(d);
+
+            if (resizeDirectionIsStart) {
+              var newStart = Math.round(valuesOnDragStart.start + delta);
+
+              if (ui.start !== newStart && newStart <= ui.end - 1 && newStart >= 0) {
+                ngModelCtrl.$setViewValue({
+                  start: newStart,
+                  end: ui.end
+                });
+                ngModelCtrl.$render();
+              }
+            } else {
+              var newEnd = Math.round(valuesOnDragStart.end + delta);
+
+              if (ui.end !== newEnd && newEnd >= ui.start + 1 && newEnd <= conf.nbWeeks) {
+                ngModelCtrl.$setViewValue({
+                  start: ui.start,
+                  end: newEnd
+                });
+                ngModelCtrl.$render();
+              }
+            }
+          };
+
+          scope.drag = function (d) {
+            var ui = ngModelCtrl.$viewValue;
+            var delta = pixelToVal(d);
+            var duration = valuesOnDragStart.end - valuesOnDragStart.start;
+
+            var newStart = Math.round(valuesOnDragStart.start + delta);
+            var newEnd = Math.round(newStart + duration);
+
+            if (ui.start !== newStart && newStart >= 0 && newEnd <= conf.nbWeeks) {
+              ngModelCtrl.$setViewValue({
+                start: newStart,
+                end: newEnd
+              });
+              ngModelCtrl.$render();
+            }
+          };
+        }
+
         // on init, merge overlaps
         mergeOverlaps(true);
 
@@ -475,7 +519,8 @@ angular.module('weeklyScheduler')
         ngModelCtrl.$parsers.push(function onUIChange(ui) {
           ngModelCtrl.$modelValue.start = timeService.addWeek(conf.minDate, ui.start).toDate();
           ngModelCtrl.$modelValue.end = timeService.addWeek(conf.minDate, ui.end).toDate();
-          $log.debug('PARSER :', ngModelCtrl.$modelValue);
+          $log.debug('PARSER :', scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
+          schedulerCtrl.on.change(scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
           return ngModelCtrl.$modelValue;
         });
 
@@ -485,18 +530,19 @@ angular.module('weeklyScheduler')
             start: timeService.weekPreciseDiff(conf.minDate, moment(model.start), true),
             end: timeService.weekPreciseDiff(conf.minDate, moment(model.end), true)
           };
-          $log.debug('FORMATTER :', ui);
+          $log.debug('FORMATTER :', scope.$parent.$index, scope.$index, ui);
           return ui;
         });
 
         ngModelCtrl.$render = function () {
           var ui = ngModelCtrl.$viewValue;
-          $log.debug('RENDER :', ui, ui.end - ui.start + 1);
-          element.css({
+          var css = {
             left: ui.start / conf.nbWeeks * 100 + '%',
             width: (ui.end - ui.start) / conf.nbWeeks * 100 + '%'
-          });
-          schedulerCtrl.on.change(scope.schedule);
+          };
+
+          $log.debug('RENDER :', scope.$parent.$index, scope.$index, css);
+          element.css(css);
         };
       }
     };
@@ -571,20 +617,20 @@ angular.module('weeklyScheduler')
       }
     };
   }]);
-angular.module('ngWeeklySchedulerTemplates', ['ng-weekly-scheduler/views/multi-slider.html', 'ng-weekly-scheduler/views/scheduler.html', 'ng-weekly-scheduler/views/slot.html']);
+angular.module('ngWeeklySchedulerTemplates', ['ng-weekly-scheduler/views/multi-slider.html', 'ng-weekly-scheduler/views/weekly-scheduler.html', 'ng-weekly-scheduler/views/weekly-slot.html']);
 
 angular.module('ng-weekly-scheduler/views/multi-slider.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/multi-slider.html',
-    '<div class="slot ghost">Add New</div><slot class=slot ng-repeat="schedule in item.schedules" ng-model=schedule></slot>');
+    '<div class="slot ghost" ng-show="!schedulerCtrl.config.monoSchedule || !item.schedules.length">{{schedulerCtrl.config.labels.addNew || \'Add New\'}}</div><weekly-slot class=slot ng-class="{disable: item.editable === false}" ng-repeat="schedule in item.schedules" ng-model=schedule ng-model-options="{ updateOn: \'default blur\', debounce: { \'default\': 500, \'blur\': 0 } }"></weekly-slot>');
 }]);
 
-angular.module('ng-weekly-scheduler/views/scheduler.html', []).run(['$templateCache', function($templateCache) {
-  $templateCache.put('ng-weekly-scheduler/views/scheduler.html',
-    '<div class=labels><div class="srow text-right">Month</div><div class="srow text-right">Week number</div><div ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class=srow ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider></multi-slider></div></div></div>');
+angular.module('ng-weekly-scheduler/views/weekly-scheduler.html', []).run(['$templateCache', function($templateCache) {
+  $templateCache.put('ng-weekly-scheduler/views/weekly-scheduler.html',
+    '<div class=labels><div class="srow text-right">{{schedulerCtrl.config.labels.month || \'Month\'}}</div><div class="srow text-right">{{schedulerCtrl.config.labels.weekNb || \'Week number\'}}</div><div ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class=srow ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider index={{$index}}></multi-slider></div></div></div>');
 }]);
 
-angular.module('ng-weekly-scheduler/views/slot.html', []).run(['$templateCache', function($templateCache) {
-  $templateCache.put('ng-weekly-scheduler/views/slot.html',
-    '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div></div>');
+angular.module('ng-weekly-scheduler/views/weekly-slot.html', []).run(['$templateCache', function($templateCache) {
+  $templateCache.put('ng-weekly-scheduler/views/weekly-slot.html',
+    '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div><div class=remove><span class="glyphicon glyphicon-remove"></span></div></div>');
 }]);
 }( window ));

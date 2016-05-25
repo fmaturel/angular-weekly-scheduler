@@ -27,7 +27,9 @@ angular.module('weeklyScheduler')
 
         function mousemove(event) {
           var delta = event.pageX - x;
-          scope.ondrag(delta);
+          if (scope.ondrag) {
+            scope.ondrag(delta);
+          }
         }
 
         function mouseup() {

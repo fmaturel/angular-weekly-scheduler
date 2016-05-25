@@ -26,15 +26,15 @@
       <pre ng-bind="model | json" style="max-height: 300px;"></pre>
     </div>
 
-    <div>
-      <weekly-scheduler class="scheduler" ng-model="model" on-change="whenSomething" on-delete="whenSomething">
-        <div class="srow">{{item.label}}</div>
-      </weekly-scheduler>
-    </div>
+    <weekly-scheduler class="scheduler"
+                      ng-model="model.items"
+                      on-change="doSomething"
+                      on-delete="doSomething"
+                      options="model.options">
+      <div class="srow">{{item.label}}</div>
+    </weekly-scheduler>
 
-    <p>
-      <button class="btn btn-success" role="button" ng-click="model.items.push({label: 'New Campaign'})">Add new</button>
-    </p>
+    <button class="btn btn-success pull-right" role="button" ng-click="model.items.push({label: 'New Campaign'})">Add new campaign</button>
 
   </div>
 </div>
