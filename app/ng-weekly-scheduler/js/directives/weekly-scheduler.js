@@ -3,9 +3,15 @@ angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
 
+    var defaultOptions = {
+      monoSchedule: false,
+      selector: '.schedule-area-container'
+    };
+
     /**
      * Configure the scheduler.
      * @param schedules
+     * @param options
      * @returns {{minDate: *, maxDate: *, nbWeeks: *}}
      */
     function config(schedules, options) {
@@ -34,69 +40,89 @@ angular.module('weeklyScheduler')
 
     return {
       restrict: 'E',
-      require: ['weeklyScheduler', 'ngModel'],
+      require: 'weeklyScheduler',
       transclude: true,
       templateUrl: 'ng-weekly-scheduler/views/weekly-scheduler.html',
-      controller: [function () {
+      controller: ['$injector', function ($injector) {
+        // Try to get the i18n service
+        var name = 'weeklySchedulerLocaleService';
+        if ($injector.has(name)) {
+          $log.info('The I18N service has successfully been initialized!');
+          var localeService = $injector.get(name);
+          defaultOptions.labels = localeService.getLang();
+        } else {
+          $log.info('No I18N found for this module, check the ng module [weeklySchedulerI18N] if you need i18n.');
+        }
+
         // Will hang our model change listeners
         this.$modelChangeListeners = [];
       }],
       controllerAs: 'schedulerCtrl',
-      link: function (scope, element, attrs, ctrls) {
-        var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1], options = {};
+      link: function (scope, element, attrs, schedulerCtrl) {
+        var optionsFn = $parse(attrs.options),
+          options = angular.extend(defaultOptions, optionsFn(scope) || {});
 
-        var el = element[0].querySelector('.schedule-area-container');
+        // Get the schedule container element
+        var el = element[0].querySelector(defaultOptions.selector);
+
+        function onModelChange(items) {
+          // Check items are present
+          if (items) {
+
+            // Check items are in an Array
+            if (!angular.isArray(items)) {
+              throw 'You should use weekly-scheduler directive with an Array of items';
+            }
+
+            // Keep track of our model (use it in template)
+            schedulerCtrl.items = items;
+
+            // First calculate configuration
+            schedulerCtrl.config = config(items.reduce(function (result, item) {
+              var schedules = item.schedules;
+
+              return result.concat(schedules && schedules.length ?
+                // If in multiSlider mode, ensure a schedule array is present on each item
+                // Else only use first element of schedule array
+                (options.monoSchedule ? item.schedules = [schedules[0]] : schedules) :
+                item.schedules = []
+              );
+            }, []), options);
+
+            // Then resize schedule area knowing the number of weeks in scope
+            el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
+
+            // Finally, run the sub directives listeners
+            schedulerCtrl.$modelChangeListeners.forEach(function (listener) {
+              listener(schedulerCtrl.config);
+            });
+          }
+        }
 
         if (el) {
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
 
-          attrs.$observe('options', function () {
-            options = angular.extend(options, $parse(attrs.options)(scope));
-            console.log('options changed', options);
-          });
-
-          ngModelCtrl.$formatters.push(function onModelChange(items) {
-            // Check items are present
-            if (items) {
-
-              // Check items are in an Array
-              if (!angular.isArray(items)) {
-                throw 'You should use weekly-scheduler directive with an Array of items';
+          schedulerCtrl.on = {
+            change: function (itemIndex, scheduleIndex, scheduleValue) {
+              var onChangeFunction = $parse(attrs.onChange)(scope);
+              if (angular.isFunction(onChangeFunction)) {
+                return onChangeFunction(itemIndex, scheduleIndex, scheduleValue);
               }
-
-              // Keep track of our model (use it in template)
-              schedulerCtrl.items = items;
-
-              // First calculate configuration
-              schedulerCtrl.config = config(items.reduce(function (result, item) {
-                var schedules = item.schedules;
-
-                return result.concat(schedules && schedules.length ?
-                  // If in multiSlider mode, ensure a schedule array is present on each item
-                  // Else only use first element of schedule array
-                  (options.monoSchedule ? item.schedules = [schedules[0]] : schedules) :
-                  item.schedules = []
-                );
-              }, []), options);
-
-              schedulerCtrl.on = {
-                change: function (itemIndex, scheduleIndex, scheduleValue) {
-                  var onChangeFunction = $parse(attrs.onChange)(scope);
-                  if (angular.isFunction(onChangeFunction)) {
-                    return onChangeFunction(itemIndex, scheduleIndex, scheduleValue);
-                  }
-                }
-              };
-
-              // Then resize schedule area knowing the number of weeks in scope
-              el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
-
-              // Finally, run the sub directives listeners
-              schedulerCtrl.$modelChangeListeners.forEach(function (listener) {
-                listener(schedulerCtrl.config);
-              });
             }
+          };
+
+          /**
+           * Watch the model items
+           */
+          scope.$watchCollection(attrs.items, onModelChange);
+
+          /**
+           * Listen to $locale change (brought by external module weeklySchedulerI18N)
+           */
+          scope.$on('weeklySchedulerLocaleChanged', function (e, labels) {
+            schedulerCtrl.config.labels = labels;
+            onModelChange(angular.copy($parse(attrs.items)(scope), []));
           });
         }
       }

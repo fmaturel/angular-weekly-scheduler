@@ -260,9 +260,15 @@ angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
 
+    var defaultOptions = {
+      monoSchedule: false,
+      selector: '.schedule-area-container'
+    };
+
     /**
      * Configure the scheduler.
      * @param schedules
+     * @param options
      * @returns {{minDate: *, maxDate: *, nbWeeks: *}}
      */
     function config(schedules, options) {
@@ -291,69 +297,89 @@ angular.module('weeklyScheduler')
 
     return {
       restrict: 'E',
-      require: ['weeklyScheduler', 'ngModel'],
+      require: 'weeklyScheduler',
       transclude: true,
       templateUrl: 'ng-weekly-scheduler/views/weekly-scheduler.html',
-      controller: [function () {
+      controller: ['$injector', function ($injector) {
+        // Try to get the i18n service
+        var name = 'weeklySchedulerLocaleService';
+        if ($injector.has(name)) {
+          $log.info('The I18N service has successfully been initialized!');
+          var localeService = $injector.get(name);
+          defaultOptions.labels = localeService.getLang();
+        } else {
+          $log.info('No I18N found for this module, check the ng module [weeklySchedulerI18N] if you need i18n.');
+        }
+
         // Will hang our model change listeners
         this.$modelChangeListeners = [];
       }],
       controllerAs: 'schedulerCtrl',
-      link: function (scope, element, attrs, ctrls) {
-        var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1], options = {};
+      link: function (scope, element, attrs, schedulerCtrl) {
+        var optionsFn = $parse(attrs.options),
+          options = angular.extend(defaultOptions, optionsFn(scope) || {});
 
-        var el = element[0].querySelector('.schedule-area-container');
+        // Get the schedule container element
+        var el = element[0].querySelector(defaultOptions.selector);
+
+        function onModelChange(items) {
+          // Check items are present
+          if (items) {
+
+            // Check items are in an Array
+            if (!angular.isArray(items)) {
+              throw 'You should use weekly-scheduler directive with an Array of items';
+            }
+
+            // Keep track of our model (use it in template)
+            schedulerCtrl.items = items;
+
+            // First calculate configuration
+            schedulerCtrl.config = config(items.reduce(function (result, item) {
+              var schedules = item.schedules;
+
+              return result.concat(schedules && schedules.length ?
+                // If in multiSlider mode, ensure a schedule array is present on each item
+                // Else only use first element of schedule array
+                (options.monoSchedule ? item.schedules = [schedules[0]] : schedules) :
+                item.schedules = []
+              );
+            }, []), options);
+
+            // Then resize schedule area knowing the number of weeks in scope
+            el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
+
+            // Finally, run the sub directives listeners
+            schedulerCtrl.$modelChangeListeners.forEach(function (listener) {
+              listener(schedulerCtrl.config);
+            });
+          }
+        }
 
         if (el) {
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
 
-          attrs.$observe('options', function () {
-            options = angular.extend(options, $parse(attrs.options)(scope));
-            console.log('options changed', options);
-          });
-
-          ngModelCtrl.$formatters.push(function onModelChange(items) {
-            // Check items are present
-            if (items) {
-
-              // Check items are in an Array
-              if (!angular.isArray(items)) {
-                throw 'You should use weekly-scheduler directive with an Array of items';
+          schedulerCtrl.on = {
+            change: function (itemIndex, scheduleIndex, scheduleValue) {
+              var onChangeFunction = $parse(attrs.onChange)(scope);
+              if (angular.isFunction(onChangeFunction)) {
+                return onChangeFunction(itemIndex, scheduleIndex, scheduleValue);
               }
-
-              // Keep track of our model (use it in template)
-              schedulerCtrl.items = items;
-
-              // First calculate configuration
-              schedulerCtrl.config = config(items.reduce(function (result, item) {
-                var schedules = item.schedules;
-
-                return result.concat(schedules && schedules.length ?
-                  // If in multiSlider mode, ensure a schedule array is present on each item
-                  // Else only use first element of schedule array
-                  (options.monoSchedule ? item.schedules = [schedules[0]] : schedules) :
-                  item.schedules = []
-                );
-              }, []), options);
-
-              schedulerCtrl.on = {
-                change: function (itemIndex, scheduleIndex, scheduleValue) {
-                  var onChangeFunction = $parse(attrs.onChange)(scope);
-                  if (angular.isFunction(onChangeFunction)) {
-                    return onChangeFunction(itemIndex, scheduleIndex, scheduleValue);
-                  }
-                }
-              };
-
-              // Then resize schedule area knowing the number of weeks in scope
-              el.firstChild.style.width = schedulerCtrl.config.nbWeeks / 53 * 200 + '%';
-
-              // Finally, run the sub directives listeners
-              schedulerCtrl.$modelChangeListeners.forEach(function (listener) {
-                listener(schedulerCtrl.config);
-              });
             }
+          };
+
+          /**
+           * Watch the model items
+           */
+          scope.$watchCollection(attrs.items, onModelChange);
+
+          /**
+           * Listen to $locale change (brought by external module weeklySchedulerI18N)
+           */
+          scope.$on('weeklySchedulerLocaleChanged', function (e, labels) {
+            schedulerCtrl.config.labels = labels;
+            onModelChange(angular.copy($parse(attrs.items)(scope), []));
           });
         }
       }
@@ -369,6 +395,7 @@ angular.module('weeklyScheduler')
       link: function (scope, element, attrs, ctrls) {
         var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
         var conf = schedulerCtrl.config;
+        var index = scope.$parent.$index;
         var containerEl = element.parent();
         var resizeDirectionIsStart = true;
         var valuesOnDragStart = {start: scope.schedule.start, end: scope.schedule.end};
@@ -519,8 +546,8 @@ angular.module('weeklyScheduler')
         ngModelCtrl.$parsers.push(function onUIChange(ui) {
           ngModelCtrl.$modelValue.start = timeService.addWeek(conf.minDate, ui.start).toDate();
           ngModelCtrl.$modelValue.end = timeService.addWeek(conf.minDate, ui.end).toDate();
-          $log.debug('PARSER :', scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
-          schedulerCtrl.on.change(scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
+          $log.debug('PARSER :', ngModelCtrl.$modelValue.$$hashKey, index, scope.$index, ngModelCtrl.$modelValue);
+          schedulerCtrl.on.change(index, scope.$index, ngModelCtrl.$modelValue);
           return ngModelCtrl.$modelValue;
         });
 
@@ -530,7 +557,7 @@ angular.module('weeklyScheduler')
             start: timeService.weekPreciseDiff(conf.minDate, moment(model.start), true),
             end: timeService.weekPreciseDiff(conf.minDate, moment(model.end), true)
           };
-          $log.debug('FORMATTER :', scope.$parent.$index, scope.$index, ui);
+          //$log.debug('FORMATTER :', index, scope.$index, ui);
           return ui;
         });
 
@@ -541,25 +568,91 @@ angular.module('weeklyScheduler')
             width: (ui.end - ui.start) / conf.nbWeeks * 100 + '%'
           };
 
-          $log.debug('RENDER :', scope.$parent.$index, scope.$index, css);
+          //$log.debug('RENDER :', index, scope.$index, css);
           element.css(css);
         };
+
+        scope.$on('weeklySchedulerLocaleChanged', function () {
+          // Simple change object reference so that ngModel triggers formatting & rendering
+          scope.schedule = angular.copy(scope.schedule);
+        });
       }
     };
   }]);
+angular.module('weeklySchedulerI18N', ['tmh.dynamicLocale']);
+
+angular.module('weeklySchedulerI18N')
+  .provider('weeklySchedulerLocaleService', ['tmhDynamicLocaleProvider', function (tmhDynamicLocaleProvider) {
+
+    var defaultConfig = {
+      doys: {'de-de': 4, 'en-gb': 4, 'en-us': 6, 'fr-fr': 4},
+      lang: {
+        'de-de': {month: 'Monat', weekNb: 'Wochenummer', addNew: 'Hinzufügen'},
+        'en-gb': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
+        'en-us': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
+        'fr-fr': {month: 'Mois', weekNb: 'N° de semaine', addNew: 'Ajouter'}
+      }
+    };
+
+    this.configure = function (config) {
+
+      if (config && angular.isObject(config)) {
+        angular.merge(defaultConfig, config);
+
+        if (defaultConfig.localeLocationPattern) {
+          tmhDynamicLocaleProvider.localeLocationPattern(defaultConfig.localeLocationPattern);
+        }
+      }
+    };
+
+    this.$get = ['$rootScope', '$locale', 'tmhDynamicLocale', function ($rootScope, $locale, tmhDynamicLocale) {
+
+      var momentLocaleCache = {};
+
+      function getLang() {
+        var key = $locale.id;
+        if (!momentLocaleCache[key]) {
+          momentLocaleCache[key] = getMomentLocale(key);
+          moment.locale(momentLocaleCache[key].id, momentLocaleCache[key].locale);
+        } else {
+          moment.locale(momentLocaleCache[key].id);
+        }
+        return defaultConfig.lang[key];
+      }
+
+      // We just need few moment local information
+      function getMomentLocale(key) {
+        return {
+          id: key,
+          locale: {
+            week: {
+              // Angular monday = 0 whereas Moment monday = 1
+              dow: ($locale.DATETIME_FORMATS.FIRSTDAYOFWEEK + 1) % 7,
+              doy: defaultConfig.doys[key]
+            }
+          }
+        };
+      }
+
+      $rootScope.$on('$localeChangeSuccess', function () {
+        $rootScope.$broadcast('weeklySchedulerLocaleChanged', getLang());
+      });
+
+      return {
+        $locale: $locale,
+        getLang: getLang,
+        set: function (key) {
+          return tmhDynamicLocale.set(key);
+        }
+      };
+    }];
+  }]);
 angular.module('weeklyScheduler')
-  .service('weeklySchedulerTimeService', ['$filter', '$locale', function ($filter, $locale) {
+  .service('weeklySchedulerTimeService', ['$filter', '$locale', function ($filter) {
 
     var MONTH = 'month';
     var WEEK = 'week';
     var DAY = 'day';
-
-    moment.locale('fr', {
-      week: {
-        dow: $locale.DATETIME_FORMATS.FIRSTDAYOFWEEK + 1, // Monday is the first day of the week.
-        doy: 4  // The week that contains Jan 4th is the first week of the year.
-      }
-    });
 
     return {
       const: {
@@ -619,17 +712,17 @@ angular.module('weeklyScheduler')
   }]);
 angular.module('ngWeeklySchedulerTemplates', ['ng-weekly-scheduler/views/multi-slider.html', 'ng-weekly-scheduler/views/weekly-scheduler.html', 'ng-weekly-scheduler/views/weekly-slot.html']);
 
-angular.module('ng-weekly-scheduler/views/multi-slider.html', []).run(['$templateCache', function($templateCache) {
+angular.module('ng-weekly-scheduler/views/multi-slider.html', []).run(['$templateCache', function ($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/multi-slider.html',
-    '<div class="slot ghost" ng-show="!schedulerCtrl.config.monoSchedule || !item.schedules.length">{{schedulerCtrl.config.labels.addNew || \'Add New\'}}</div><weekly-slot class=slot ng-class="{disable: item.editable === false}" ng-repeat="schedule in item.schedules" ng-model=schedule ng-model-options="{ updateOn: \'default blur\', debounce: { \'default\': 500, \'blur\': 0 } }"></weekly-slot>');
+    '<div class="slot ghost" ng-show="item.editable !== false && (!schedulerCtrl.config.monoSchedule || !item.schedules.length)">{{schedulerCtrl.config.labels.addNew || \'Add New\'}}</div><weekly-slot class=slot ng-class="{disable: item.editable === false}" ng-repeat="schedule in item.schedules" ng-model=schedule ng-model-options="{ updateOn: \'default blur\', debounce: { \'default\': 500, \'blur\': 0 } }"></weekly-slot>');
 }]);
 
-angular.module('ng-weekly-scheduler/views/weekly-scheduler.html', []).run(['$templateCache', function($templateCache) {
+angular.module('ng-weekly-scheduler/views/weekly-scheduler.html', []).run(['$templateCache', function ($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/weekly-scheduler.html',
     '<div class=labels><div class="srow text-right">{{schedulerCtrl.config.labels.month || \'Month\'}}</div><div class="srow text-right">{{schedulerCtrl.config.labels.weekNb || \'Week number\'}}</div><div ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class=srow ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider index={{$index}}></multi-slider></div></div></div>');
 }]);
 
-angular.module('ng-weekly-scheduler/views/weekly-slot.html', []).run(['$templateCache', function($templateCache) {
+angular.module('ng-weekly-scheduler/views/weekly-slot.html', []).run(['$templateCache', function ($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/weekly-slot.html',
     '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div><div class=remove><span class="glyphicon glyphicon-remove"></span></div></div>');
 }]);

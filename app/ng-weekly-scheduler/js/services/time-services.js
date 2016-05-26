@@ -1,16 +1,9 @@
 angular.module('weeklyScheduler')
-  .service('weeklySchedulerTimeService', ['$filter', '$locale', function ($filter, $locale) {
+  .service('weeklySchedulerTimeService', ['$filter', '$locale', function ($filter) {
 
     var MONTH = 'month';
     var WEEK = 'week';
     var DAY = 'day';
-
-    moment.locale('fr', {
-      week: {
-        dow: $locale.DATETIME_FORMATS.FIRSTDAYOFWEEK + 1, // Monday is the first day of the week.
-        doy: 4  // The week that contains Jan 4th is the first week of the year.
-      }
-    });
 
     return {
       const: {

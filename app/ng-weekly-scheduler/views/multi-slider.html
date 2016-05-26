@@ -1,4 +1,4 @@
-<div class="slot ghost" ng-show="!schedulerCtrl.config.monoSchedule || !item.schedules.length">{{schedulerCtrl.config.labels.addNew || 'Add New'}}</div>
+<div class="slot ghost" ng-show="item.editable !== false && (!schedulerCtrl.config.monoSchedule || !item.schedules.length)">{{schedulerCtrl.config.labels.addNew || 'Add New'}}</div>
 
 <weekly-slot class="slot"
              ng-class="{disable: item.editable === false}"

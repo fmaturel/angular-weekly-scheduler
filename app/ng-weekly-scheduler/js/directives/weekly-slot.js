@@ -8,6 +8,7 @@ angular.module('weeklyScheduler')
       link: function (scope, element, attrs, ctrls) {
         var schedulerCtrl = ctrls[0], ngModelCtrl = ctrls[1];
         var conf = schedulerCtrl.config;
+        var index = scope.$parent.$index;
         var containerEl = element.parent();
         var resizeDirectionIsStart = true;
         var valuesOnDragStart = {start: scope.schedule.start, end: scope.schedule.end};
@@ -158,8 +159,8 @@ angular.module('weeklyScheduler')
         ngModelCtrl.$parsers.push(function onUIChange(ui) {
           ngModelCtrl.$modelValue.start = timeService.addWeek(conf.minDate, ui.start).toDate();
           ngModelCtrl.$modelValue.end = timeService.addWeek(conf.minDate, ui.end).toDate();
-          $log.debug('PARSER :', scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
-          schedulerCtrl.on.change(scope.$parent.$index, scope.$index, ngModelCtrl.$modelValue);
+          $log.debug('PARSER :', ngModelCtrl.$modelValue.$$hashKey, index, scope.$index, ngModelCtrl.$modelValue);
+          schedulerCtrl.on.change(index, scope.$index, ngModelCtrl.$modelValue);
           return ngModelCtrl.$modelValue;
         });
 
@@ -169,7 +170,7 @@ angular.module('weeklyScheduler')
             start: timeService.weekPreciseDiff(conf.minDate, moment(model.start), true),
             end: timeService.weekPreciseDiff(conf.minDate, moment(model.end), true)
           };
-          $log.debug('FORMATTER :', scope.$parent.$index, scope.$index, ui);
+          //$log.debug('FORMATTER :', index, scope.$index, ui);
           return ui;
         });
 
@@ -180,9 +181,14 @@ angular.module('weeklyScheduler')
             width: (ui.end - ui.start) / conf.nbWeeks * 100 + '%'
           };
 
-          $log.debug('RENDER :', scope.$parent.$index, scope.$index, css);
+          //$log.debug('RENDER :', index, scope.$index, css);
           element.css(css);
         };
+
+        scope.$on('weeklySchedulerLocaleChanged', function () {
+          // Simple change object reference so that ngModel triggers formatting & rendering
+          scope.schedule = angular.copy(scope.schedule);
+        });
       }
     };
   }]);
