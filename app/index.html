@@ -14,12 +14,36 @@
 
 <a class="github-fork-ribbon" href="https://github.com/fmaturel/angular-weekly-scheduler" title="Fork me on GitHub">Fork me on GitHub</a>
 
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">dijit</a>
+    </div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#demo">Demo <span class="sr-only">(current)</span></a></li>
+        <li><a href="#run">Run @ Home</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#features">Features</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
 <div class="row" ng-controller="DemoController as demo">
   <div class="col-xs-10 col-xs-offset-1">
 
     <h1>Angularjs weekly scheduler</h1>
 
-    <h2>1. Demo</h2>
+    <h2 id="demo" class="page-header">1. Demo</h2>
 
     <div>
       <label for="language">Choose your language:</label>
@@ -42,14 +66,107 @@
                       on-change="demo.doSomething"
                       on-delete="demo.doSomething"
                       options="model.options">
-      <div class="srow">{{item.label}}</div>
+      <div class="srow">{{::$index + 1}}. {{item.label}}</div>
     </weekly-scheduler>
 
     <div class="pull-right">
-      <button class="btn btn-success" role="button" ng-click="model.items.push({label: 'New Campaign'})">Add new campaign</button>
-      <button class="btn btn-success" role="button" ng-click="demo.reload()">Reload</button>
+      <button class="btn btn-success" role="button" ng-click="model.items.push({label: 'New Item'})">Add new item</button>
     </div>
 
+    <h2 id="run" class="page-header">2. Run @ Home</h2>
+
+    <p>Run the demo @home with few steps (prerequisite git & node V0.10+ & npm installed):</p>
+
+    <pre>
+git clone https://github.com/fmaturel/angular-weekly-scheduler.git && cd angular-weekly-scheduler
+npm install
+npm install -g grunt-cli</pre>
+
+    <p>Then run <code>grunt serve:dist</code></p>
+
+    <h2 id="install" class="page-header">3. Install</h2>
+
+    <p><code>bower install --save angular-weekly-scheduler</code></p>
+
+    <p>or</p>
+
+    <p><code>npm install --save angular-weekly-scheduler</code></p>
+
+    <p>Add the scripts and css to your index.html. The angular-locale_xx-xx.js file is your locale file</p>
+
+    <pre>
+&lt;link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"&gt;
+&lt;script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.10/angular.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/angular-i18n/1.4.10/angular-locale_xx-xx.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.js"&gt;&lt;/script&gt;
+
+&lt;!-- The library to replace with your local copy of ng-weekly-scheduler --&gt;
+&lt;script src="https://github.com/fmaturel/angular-weekly-scheduler/blob/master/dist/js/ng-weekly-scheduler.js"&gt;&lt;/script&gt;</pre>
+
+    <p>Add dependency to timeline your angular module: weeklyScheduler.</p>
+
+    <p>Use the directive:</p>
+
+    <code>&lt;weekly-scheduler class="scheduler" ng-model="myScopeModel" options="options"&gt;&lt;/weekly-scheduler&gt;</code>
+
+    <h2 id="features" class="page-header">4. Features</h2>
+
+    <p>This directive displays a weekly item scheduler. You can see, add and modify items easily.</p>
+
+    <h3>Keyboard shortcuts</h3>
+    <ul>
+      <li>Use <kbd>mouse wheel</kbd> on schedule to scroll left and right</li>
+      <li>Use <kbd>ctrl + mouse wheel</kbd> to zoom in and out the schedule</li>
+    </ul>
+
+    <hr>
+
+    <h3>Schedules</h3>
+    <div class="alert alert-info alert-dismissible fade in" role="alert">
+      This directive uses <a href="http://momentjs.com/"><strong>MomentJS</strong></a> to position items and calculate localized calendar weeks.
+    </div>
+    <p>Drag the time bar start, end and body to quickly change your schedule period.</p>
+    <p>You can set an <code>editable</code> variable on each item, that will be used to disable item edition if <code>false</code>.
+    <pre>
+"items": [{
+  "label": "Item 1",
+  "editable": false,
+  "schedules": [
+    {
+      "start": "2015-12-26T23:00:00.000Z",
+      "end": "2016-07-31T22:00:00.000Z"
+    }
+  ]
+}, ...]</pre>
+    <hr>
+
+    <h3>Transclusion</h3>
+    <p>This directive is using <code>ng-transclude</code> so that everything in <code>&lt;weekly-scheduler&gt;</code>
+      element will be treated as the labelling object of one item.</p>
+
+    <pre>&lt;div class="srow"&gt;\{\{::$index + 1\}\}. \{\{ item.label \}\}&lt;/div&gt;</pre>
+
+    <p>On transcluded item label, the scope contains <code>item</code> attribute name containing each item model and regular <code>ng-repeat</code> scope attributes</p>
+
+    <h3>Internationalisation (i18n)</h3>
+    <p>I18N uses <a href="https://github.com/lgalfaso/angular-dynamic-locale">dynamic angular <code>$locale</code> change</a>.</p>
+    <p>An i18n module named <code>weeklySchedulerI18N</code> is optionally registered when using the core module :</p>
+
+    <pre>angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])</pre>
+
+    <p>If present, core directive will retrieve current <code>$locale</code> and use it to translate labelling elements.</p>
+
+    <p>You can add more <code>$locale</code> translation using provider <code>weeklySchedulerLocaleServiceProvider</code>:</p>
+
+    <pre>
+angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])
+  .config(['weeklySchedulerLocaleServiceProvider', function (localeServiceProvider) {
+    localeServiceProvider.configure({
+      doys: {'es-es': 4},
+      lang: {'es-es': {month: 'Mes', weekNb: 'número de la semana', addNew: 'Añadir'}},
+      localeLocationPattern: '/vendor/angular-i18n/angular-locale_{{locale}}.js'
+    });
+  }])</pre>
   </div>
 </div>
 <script src="/vendor/angular/angular.js"></script>
@@ -57,5 +174,15 @@
 <script src="/vendor/moment/moment.js"></script>
 <script src="/js/ng-weekly-scheduler.js"></script>
 <script src="demo-app.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-22755333-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>

@@ -49,6 +49,66 @@ Use the directive:
 
 `<weekly-scheduler class="scheduler" ng-model="myScopeModel" options="options"></weekly-scheduler>`
 
+## Features
+
+This directive displays a weekly item scheduler. You can see, add and modify items easily.
+
+### Keyboard shortcuts
+
+* Use <kbd>mouse wheel</kbd> on schedule to scroll left and right</li>
+* Use <kbd>ctrl + mouse wheel</kbd> to zoom in and out the schedule</li>
+
+### Schedules
+
+:information_source: This directive uses [MomentJS](http://momentjs.com) to position items and calculate localized calendar weeks.
+Drag the time bar start, end and body to quickly change your schedule period.
+You can set an `editable` variable on each item, that will be used to disable item edition if `false`.
+```javascript
+"items": [{
+  "label": "Item 1",
+  "editable": false,
+  "schedules": [
+    {
+      "start": "2015-12-26T23:00:00.000Z",
+      "end": "2016-07-31T22:00:00.000Z"
+    }
+  ]
+}, ...]
+```
+
+### Transclusion
+
+This directive is using `ng-transclude` so that everything in `&lt;weekly-scheduler&gt;` element will be treated as the labelling object of one item.
+
+```
+<div class="srow">{{::$index + 1}}. {{item.label}}</div>
+```
+
+On transcluded item label, the scope contains `item` attribute name containing each item model and regular `ng-repeat` :repeat: scope attributes
+
+### Internationalisation (i18n)
+
+I18N uses [dynamic angular `$locale` change](https://github.com/lgalfaso/angular-dynamic-locale).
+An i18n module named `weeklySchedulerI18N` is optionally registered when using the core module :
+
+```javascript
+angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])
+```
+
+If present, core directive will retrieve current `$locale` and use it to translate labelling elements.
+You can add more `$locale` translation using provider `weeklySchedulerLocaleServiceProvider`:
+
+```javascript
+angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])
+  .config(['weeklySchedulerLocaleServiceProvider', function (localeServiceProvider) {
+    localeServiceProvider.configure({
+      doys: {'es-es': 4},
+      lang: {'es-es': {month: 'Mes', weekNb: 'número de la semana', addNew: 'Añadir'}},
+      localeLocationPattern: '/vendor/angular-i18n/angular-locale_{{locale}}.js'
+    });
+  }])
+```
+
 ## License
 
 Released under the MIT License. See the [LICENSE][license] file for further details.

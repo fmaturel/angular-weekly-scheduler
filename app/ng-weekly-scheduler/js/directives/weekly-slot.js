@@ -1,6 +1,6 @@
 angular.module('weeklyScheduler')
 
-  .directive('weeklySlot', ['weeklySchedulerTimeService', '$log', function (timeService, $log) {
+  .directive('weeklySlot', ['weeklySchedulerTimeService', function (timeService) {
     return {
       restrict: 'E',
       require: ['^weeklyScheduler', 'ngModel'],
@@ -159,7 +159,7 @@ angular.module('weeklyScheduler')
         ngModelCtrl.$parsers.push(function onUIChange(ui) {
           ngModelCtrl.$modelValue.start = timeService.addWeek(conf.minDate, ui.start).toDate();
           ngModelCtrl.$modelValue.end = timeService.addWeek(conf.minDate, ui.end).toDate();
-          $log.debug('PARSER :', ngModelCtrl.$modelValue.$$hashKey, index, scope.$index, ngModelCtrl.$modelValue);
+          //$log.debug('PARSER :', ngModelCtrl.$modelValue.$$hashKey, index, scope.$index, ngModelCtrl.$modelValue);
           schedulerCtrl.on.change(index, scope.$index, ngModelCtrl.$modelValue);
           return ngModelCtrl.$modelValue;
         });

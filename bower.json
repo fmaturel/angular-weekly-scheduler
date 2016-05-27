@@ -1,7 +1,7 @@
 {
   "name": "angular-weekly-scheduler",
   "appPath": "app",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A scheduler using weeks for AngularJS",
   "homepage": "https://github.com/fmaturel/angular-weekly-scheduler",
   "license": "MIT",
@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "angular": "~1.4.0",
+    "angular-dynamic-locale": "^0.1.32",
     "angular-i18n": "~1.4.0",
     "moment": "~2.13"
   },

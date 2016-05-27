@@ -161,7 +161,15 @@
           }, {
             expand: true,
             cwd: 'node_modules',
-            src: ['angular/angular*.js','angular-i18n/angular-locale_fr-fr.js', 'moment/moment.js'],
+            src: [
+              'angular/angular*.js',
+              'angular-i18n/angular-locale_en-us.js',
+              'angular-i18n/angular-locale_en-gb.js',
+              'angular-i18n/angular-locale_fr-fr.js',
+              'angular-i18n/angular-locale_de-de.js',
+              'angular-i18n/angular-locale_es-es.js',
+              'angular-dynamic-locale/dist/tmhDynamicLocale.js',
+              'moment/moment.js'],
             dest: '<%= yeoman.dist %>/vendor'
           }]
         }
