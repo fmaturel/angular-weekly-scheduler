@@ -78,7 +78,7 @@ You can set an `editable` variable on each item, that will be used to disable it
 
 ### Transclusion
 
-This directive is using `ng-transclude` so that everything in `&lt;weekly-scheduler&gt;` element will be treated as the labelling object of one item.
+This directive is using `ng-transclude` so that everything in `<weekly-scheduler>` element will be treated as the labelling object of one item.
 
 ```
 <div class="srow">{{::$index + 1}}. {{item.label}}</div>
