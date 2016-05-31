@@ -1,3 +1,58 @@
+/*---------------------------------------------------------------- Scheduler */
+.scheduler {
+  display: block;
+  background: #fff;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.scheduler::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.scheduler .labels, .scheduler .schedule-area-container {
+  display: block;
+  float: left;
+}
+
+.scheduler .labels {
+  width: 15%;
+  color: #666;
+  border-right: 1px solid #ddd;
+}
+
+.scheduler .labels .srow {
+  padding: 0 5px;
+  border-bottom: 1px solid #ddd;
+}
+
+.scheduler .schedule-area-container {
+  overflow-x: scroll;
+  width: 85%;
+}
+
+.scheduler .srow {
+  position: relative;
+  height: 35px;
+  line-height: 35px;
+}
+
+.scheduler .timestamps {
+  color: #aaa;
+  position: relative;
+}
+
+.scheduler .timestamps .grid-container div {
+  border-right: 1px solid #eee;
+}
+
+.scheduler .timestamps .grid-container div:last-child {
+  border-right: none;
+}
+
+/*------------------------------------------------------------- Multi-slider */
 multi-slider {
   position: relative;
   display: block;
@@ -111,59 +166,6 @@ multi-slider weekly-slot.active {
   color: #fff;
 }
 
-.scheduler {
-  display: block;
-  background: #fff;
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-
-.scheduler::after {
-  content: "";
-  display: block;
-  clear: both;
-}
-
-.scheduler .labels, .scheduler .schedule-area-container {
-  display: block;
-  float: left;
-}
-
-.scheduler .labels {
-  width: 15%;
-  color: #666;
-  border-right: 1px solid #ddd;
-}
-
-.scheduler .labels .srow {
-  padding: 0 5px;
-  border-bottom: 1px solid #ddd;
-}
-
-.scheduler .schedule-area-container {
-  overflow-x: scroll;
-  width: 85%;
-}
-
-.scheduler .srow {
-  position: relative;
-  height: 35px;
-  line-height: 35px;
-}
-
-.scheduler .timestamps {
-  color: #aaa;
-  position: relative;
-}
-
-.scheduler .timestamps .grid-container div {
-  border-right: 1px solid #eee;
-}
-
-.scheduler .timestamps .grid-container div:last-child {
-  border-right: none;
-}
-
 .grid-container {
   width: 100%;
   position: absolute;
@@ -185,4 +187,16 @@ multi-slider weekly-slot.active {
 
 .github-fork-ribbon:after {
   line-height: 1em;
+}
+
+/*--------------------------------------------------------------- Animations */
+.schedule-animate {
+  transition: opacity 200ms ease-out;
+}
+.schedule-animate.ng-enter, .schedule-animate.ng-hide-remove {
+  opacity: 0;
+}
+.schedule-animate.ng-leave, .schedule-animate.ng-hide-add {
+  display: none;
+  opacity: 1;
 }

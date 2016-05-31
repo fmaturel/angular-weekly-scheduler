@@ -1,4 +1,4 @@
-angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])
+angular.module('demoApp', ['ngAnimate', 'weeklyScheduler', 'weeklySchedulerI18N'])
 
   .config(['weeklySchedulerLocaleServiceProvider', function (localeServiceProvider) {
     localeServiceProvider.configure({
