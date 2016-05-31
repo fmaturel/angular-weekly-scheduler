@@ -109,6 +109,37 @@ angular.module('demoApp', ['weeklyScheduler', 'weeklySchedulerI18N'])
   }])
 ```
 
+### Animation
+
+You can add animation to the weekly scheduler directive easily by importing angular module `ngAnimate`.
+Your application could for instance use :
+
+```javascript
+angular.module('demoApp', ['ngAnimate', 'weeklyScheduler'])
+```
+
+Don't forget to add the angular-animate javascript file to your Single Page App `index.html`.
+
+```
+<script src="/vendor/angular-animate/angular-animate.js"></script>
+```
+
+Styling can be changed to whatever you like. This is an example of fading-in items entering the DOM :
+
+```css
+.schedule-animate {
+  transition: opacity 200ms ease-out;
+}
+.schedule-animate.ng-enter, .schedule-animate.ng-hide-remove {
+  opacity: 0;
+}
+.schedule-animate.ng-leave, .schedule-animate.ng-hide-add {
+  display: none;
+  opacity: 1;
+}
+```
+
+You should see your scheduler items fading in!
 ## License
 
 Released under the MIT License. See the [LICENSE][license] file for further details.
