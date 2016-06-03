@@ -216,13 +216,15 @@
         'clean',
         'html2js',
         'jshint:all',
-        'concat:js',
+        'concat',
         'connect:livereload',
         'watch'
       ]);
     });
 
     grunt.registerTask('test', [
+      'html2js',
+      'concat',
       'jshint',
       'connect:test',
       'karma'
@@ -230,6 +232,7 @@
 
     grunt.registerTask('build', [
       'clean',
+      'html2js',
       'concat',
       'copy:dist'
     ]);
