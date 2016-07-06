@@ -120,7 +120,9 @@ angular.module('weeklyScheduler')
            * Listen to $locale change (brought by external module weeklySchedulerI18N)
            */
           scope.$on('weeklySchedulerLocaleChanged', function (e, labels) {
-            schedulerCtrl.config.labels = labels;
+            if (schedulerCtrl.config) {
+              schedulerCtrl.config.labels = labels;
+            }
             onModelChange(angular.copy($parse(attrs.items)(scope), []));
           });
         }
