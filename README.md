@@ -9,6 +9,10 @@ http://www.dijit.fr/demo/angular-weekly-scheduler/
 
 [![screenshot](http://www.dijit.fr/demo/angular-weekly-scheduler/screenshot.png)](http://www.dijit.fr/demo/angular-weekly-scheduler/screenshot.png)
 
+## Plunker
+
+https://embed.plnkr.co/CImLQFfbd64JFezNBTWQ/
+
 ## Run @ Home
 Run the demo @home with few steps (prerequisite git & node V0.10+ & npm installed):
 
