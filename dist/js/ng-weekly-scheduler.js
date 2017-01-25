@@ -359,6 +359,13 @@ angular.module('weeklyScheduler')
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
 
+          /*
+            I have never heard about setting an event listener to an angular controller. 
+            So please ,can you tell me what does it means in this case and to which part of 
+            the angular API is it related to ?!
+
+            How this listener will interact with a change in the scheduler ?
+          */
           schedulerCtrl.on = {
             change: function (itemIndex, scheduleIndex, scheduleValue) {
               var onChangeFunction = $parse(attrs.onChange)(scope);

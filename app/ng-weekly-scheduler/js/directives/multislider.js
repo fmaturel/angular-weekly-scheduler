@@ -24,6 +24,11 @@ angular.module('weeklyScheduler')
         var defaultNewScheduleSize = parseInt(attrs.size) || 8;
 
         var valToPixel = function (val) {
+          /* Here i couldn't understand the meaning of this formula 
+            the val which is defaultNewScheduleSize (in "px") devided
+            by the number of weeks (a number).
+              What means this percent ?
+           */
           var percent = val / (conf.nbWeeks);
           return Math.floor(percent * element[0].clientWidth + 0.5);
         };
