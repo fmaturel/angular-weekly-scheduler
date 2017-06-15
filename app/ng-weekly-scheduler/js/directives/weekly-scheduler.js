@@ -1,4 +1,4 @@
-/* global mouseScroll, CLICK_ON_A_CELL, resizeFromWeek */
+/* global mouseScroll, CLICK_ON_A_CELL, zoomInACell */
 angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
@@ -103,8 +103,8 @@ angular.module('weeklyScheduler')
           mouseScroll(el, 20);
 
           scope.$on(CLICK_ON_A_CELL, function(e, data) {
-            resizeFromWeek(el, e, data)
-          })
+            zoomInACell(el, e, data);
+          });
 
           schedulerCtrl.on = {
             change: function (itemIndex, scheduleIndex, scheduleValue) {

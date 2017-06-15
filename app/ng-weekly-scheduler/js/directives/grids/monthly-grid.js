@@ -21,8 +21,8 @@ angular.module('weeklyScheduler')
 
       var totalWidth = 0;
       // Deploy the grid system on element
-        var child = GRID_TEMPLATE.clone().css({width: month.width + '%'});
       months.forEach(function (month, idx) {
+        var child = GRID_TEMPLATE.clone().css({ width: month.width + '%' });
         if (angular.isUndefined(attrs.noText)) {
           handleClickEvent(child, totalWidth, months.length, idx, scope);
           child.text(timeService.dF(month.start.toDate(), 'MMM yyyy'));

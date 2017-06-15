@@ -2,7 +2,7 @@ angular.module('weeklyScheduler', ['ngWeeklySchedulerTemplates']);
 
 /* jshint -W098 */
 var GRID_TEMPLATE = angular.element('<div class="grid-item"></div>');
-var CLICK_ON_A_CELL = 'clickOnACell'
+var CLICK_ON_A_CELL = 'clickOnACell';
 
 var isCtrl;
 
@@ -40,7 +40,7 @@ function mouseScroll(el, delta) {
   });
 }
 
-function resizeFromWeek(el, event, data) {
+function zoomInACell(el, event, data) {
 
   var nbElements = data.nbElements;
   var idx = data.idx;
