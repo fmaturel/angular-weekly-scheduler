@@ -1,4 +1,4 @@
-/*global mouseScroll */
+/* global mouseScroll, CLICK_ON_A_CELL, resizeFromWeek */
 angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
@@ -101,6 +101,10 @@ angular.module('weeklyScheduler')
         if (el) {
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
+
+          scope.$on(CLICK_ON_A_CELL, function(e, data) {
+            resizeFromWeek(el, e, data)
+          })
 
           schedulerCtrl.on = {
             change: function (itemIndex, scheduleIndex, scheduleValue) {
