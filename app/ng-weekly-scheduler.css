@@ -46,6 +46,11 @@
 
 .scheduler .timestamps .grid-container div {
   border-right: 1px solid #eee;
+  cursor: pointer;
+}
+
+.scheduler .timestamps .grid-container div:hover {
+  background-color: #f0f0f0;
 }
 
 .scheduler .timestamps .grid-container div:last-child {
