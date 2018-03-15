@@ -5,6 +5,7 @@ angular.module('weeklyScheduler', ['ngWeeklySchedulerTemplates']);
 
 /* jshint -W098 */
 var GRID_TEMPLATE = angular.element('<div class="grid-item"></div>');
+var CLICK_ON_A_CELL = 'clickOnACell';
 
 var isCtrl;
 
@@ -41,24 +42,69 @@ function mouseScroll(el, delta) {
     return false;
   });
 }
-/*jshint +W098 */
-/*global GRID_TEMPLATE */
+
+function zoomInACell(el, event, data) {
+
+  var nbElements = data.nbElements;
+  var idx = data.idx;
+  // percentWidthFromBeginning is used when the first element of the grid is not full
+  // For instance, in the example below `feb 17` is not full
+  // feb 17          march 17
+  //       |                          |
+  var percentWidthFromBeginning = data.percentWidthFromBeginning;
+
+  var containerWidth = el.offsetWidth;
+
+  // leave (1/3) each side
+  // 1/3 |    3/3   | 1/3
+  var boxWidth = containerWidth / (5 / 3);
+  var gutterSize = boxWidth / 3;
+
+  var scheduleAreaWidthPx = nbElements * boxWidth;
+  var scheduleAreaWidthPercent = (scheduleAreaWidthPx / containerWidth) * 100;
+
+  el.firstChild.style.width = scheduleAreaWidthPercent + '%';
+
+  if (percentWidthFromBeginning === undefined) {
+    // All cells of a line have the same size
+    el.scrollLeft = idx * boxWidth - gutterSize;
+  } else {
+    // Sizes of cells in a line could different (especially the first one)
+    el.scrollLeft = scheduleAreaWidthPx * (percentWidthFromBeginning / 100) - gutterSize;
+  }
+}
+/* jshint +W098 */
+
+/* global GRID_TEMPLATE, CLICK_ON_A_CELL */
 angular.module('weeklyScheduler')
   .directive('monthlyGrid', ['weeklySchedulerTimeService', function (timeService) {
 
-    function doGrid(element, attrs, model) {
+    function handleClickEvent(child, totalWidth, nbMonths, idx, scope) {
+      child.bind('click', function () {
+        scope.$broadcast(CLICK_ON_A_CELL, {
+          nbElements: nbMonths,
+          idx: idx,
+          percentWidthFromBeginning: totalWidth
+        });
+      });
+    }
+
+    function doGrid(scope, element, attrs, model) {
       // Clean element
       element.empty();
 
       // Calculation month distribution
       var months = timeService.monthDistribution(model.minDate, model.maxDate);
 
+      var totalWidth = 0;
       // Deploy the grid system on element
-      months.forEach(function (month) {
-        var child = GRID_TEMPLATE.clone().css({width: month.width + '%'});
+      months.forEach(function (month, idx) {
+        var child = GRID_TEMPLATE.clone().css({ width: month.width + '%' });
         if (angular.isUndefined(attrs.noText)) {
+          handleClickEvent(child, totalWidth, months.length, idx, scope);
           child.text(timeService.dF(month.start.toDate(), 'MMM yyyy'));
         }
+        totalWidth += month.width;
         element.append(child);
       });
     }
@@ -68,16 +114,25 @@ angular.module('weeklyScheduler')
       require: '^weeklyScheduler',
       link: function (scope, element, attrs, schedulerCtrl) {
         schedulerCtrl.$modelChangeListeners.push(function (newModel) {
-          doGrid(element, attrs, newModel);
+          doGrid(scope, element, attrs, newModel);
         });
       }
     };
   }]);
-/*global GRID_TEMPLATE */
+/* global GRID_TEMPLATE, CLICK_ON_A_CELL */
 angular.module('weeklyScheduler')
   .directive('weeklyGrid', [function () {
 
-    function doGrid(element, attrs, model) {
+    function handleClickEvent(child, nbWeeks, idx, scope) {
+      child.bind('click', function () {
+        scope.$broadcast(CLICK_ON_A_CELL, {
+          nbElements: nbWeeks,
+          idx: idx
+        });
+      });
+    }
+
+    function doGrid(scope, element, attrs, model) {
       var i;
       // Calculate week width distribution
       var tickcount = model.nbWeeks;
@@ -91,10 +146,12 @@ angular.module('weeklyScheduler')
       for (i = 0; i < tickcount; i++) {
         var child = gridItemEl.clone();
         if (angular.isUndefined(attrs.noText)) {
+          handleClickEvent(child, tickcount, i, scope);
           child.text(now.add(i && 1, 'week').week());
         }
         element.append(child);
       }
+
     }
 
     return {
@@ -102,10 +159,10 @@ angular.module('weeklyScheduler')
       require: '^weeklyScheduler',
       link: function (scope, element, attrs, schedulerCtrl) {
         if (schedulerCtrl.config) {
-          doGrid(element, attrs, schedulerCtrl.config);
+          doGrid(scope, element, attrs, schedulerCtrl.config);
         }
         schedulerCtrl.$modelChangeListeners.push(function (newModel) {
-          doGrid(element, attrs, newModel);
+          doGrid(scope, element, attrs, newModel);
         });
       }
     };
@@ -255,7 +312,7 @@ angular.module('weeklyScheduler')
       }
     };
   }]);
-/*global mouseScroll */
+/* global mouseScroll, CLICK_ON_A_CELL, zoomInACell */
 angular.module('weeklyScheduler')
 
   .directive('weeklyScheduler', ['$parse', 'weeklySchedulerTimeService', '$log', function ($parse, timeService, $log) {
@@ -358,6 +415,10 @@ angular.module('weeklyScheduler')
         if (el) {
           // Install mouse scrolling event listener for H scrolling
           mouseScroll(el, 20);
+
+          scope.$on(CLICK_ON_A_CELL, function(e, data) {
+            zoomInACell(el, e, data);
+          });
 
           schedulerCtrl.on = {
             change: function (itemIndex, scheduleIndex, scheduleValue) {
