@@ -19,7 +19,7 @@
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
+        <span class="sr-only">Toggle navigation</span>.
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -121,13 +121,20 @@ npm install -g grunt-cli</pre>
 
     <hr>
 
+      <h3>Options</h3>
+      <p>You can set <code>showWeeks</code> to <code>false</code> to hide week line.<br>
+      <p>You can set <code>minDate</code> to limit the schedulers start date.<br>
+      <p>You can set <code>maxDate</code> to limit the schedulers end date.<br>
+      <hr>
+
     <h3>Schedules</h3>
     <div class="alert alert-info alert-dismissible fade in" role="alert">
       This directive uses <a href="http://momentjs.com/"><strong>MomentJS</strong></a> to position items and calculate localized calendar weeks.
     </div>
     <p>Drag the time bar start, end and body to quickly change your schedule period.</p>
     <p>You can set an <code>editable</code> variable on each item, that will be used to disable item edition if <code>false</code>.
-    <pre>
+    <p>You can set an <code>className</code> - <code>red</code>, <code>green</code>, <code>blue</code>  to change the weekly-slot color.
+      <pre>
 "items": [{
   "label": "Item 1",
   "editable": false,

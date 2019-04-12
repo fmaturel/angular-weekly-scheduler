@@ -1,6 +1,6 @@
 <div class="labels">
   <div class="srow text-right">{{schedulerCtrl.config.labels.month || 'Month'}}</div>
-  <div class="srow text-right">{{schedulerCtrl.config.labels.weekNb || 'Week number'}}</div>
+  <div ng-show = "schedulerCtrl.config.showWeeks" class="srow text-right">{{schedulerCtrl.config.labels.weekNb || 'Week number'}}</div>
   <div class="schedule-animate" ng-repeat="item in schedulerCtrl.items" inject></div>
 </div>
 
@@ -11,7 +11,7 @@
       <monthly-grid class="grid-container"></monthly-grid>
     </div>
 
-    <div class="srow timestamps">
+    <div ng-show = "schedulerCtrl.config.showWeeks" class="srow timestamps">
       <weekly-grid class="grid-container"></weekly-grid>
     </div>
 

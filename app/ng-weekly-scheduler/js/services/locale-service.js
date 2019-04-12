@@ -9,7 +9,8 @@ angular.module('weeklySchedulerI18N')
         'de-de': {month: 'Monat', weekNb: 'Wochenummer', addNew: 'Hinzufügen'},
         'en-gb': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
         'en-us': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
-        'fr-fr': {month: 'Mois', weekNb: 'N° de semaine', addNew: 'Ajouter'}
+        'fr-fr': {month: 'Mois', weekNb: 'N° de semaine', addNew: 'Ajouter'},
+        'lt-lt': {month: 'Mėnesis', weekNb: 'Savaites nr', addNew: 'Pridėti'},
       }
     };
 

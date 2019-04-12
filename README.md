@@ -62,11 +62,18 @@ This directive displays a weekly item scheduler. You can see, add and modify ite
 * Use <kbd>mouse wheel</kbd> on schedule to scroll left and right</li>
 * Use <kbd>ctrl + mouse wheel</kbd> to zoom in and out the schedule</li>
 
+### Options
+
+You can set `showWeeks` to `false` to hide week line.<br>
+You can set `minDate` to limit the schedulers start date.<br>
+You can set `maxDate` to limit the schedulers end date.<br>
+
 ### Schedules
 
 :information_source: This directive uses [MomentJS](http://momentjs.com) to position items and calculate localized calendar weeks.
 Drag the time bar start, end and body to quickly change your schedule period.
 You can set an `editable` variable on each item, that will be used to disable item edition if `false`.
+You can add `className` - `red`, `green`, `blue` to change the slots color.
 ```javascript
 "items": [{
   "label": "Item 1",
@@ -74,7 +81,8 @@ You can set an `editable` variable on each item, that will be used to disable it
   "schedules": [
     {
       "start": "2015-12-26T23:00:00.000Z",
-      "end": "2016-07-31T22:00:00.000Z"
+      "end": "2016-07-31T22:00:00.000Z",
+      "className": "red"
     }
   ]
 }, ...]
