@@ -330,17 +330,26 @@ angular.module('weeklyScheduler')
      */
     function config(schedules, options) {
       var now = moment();
+      var minDate = 0;
+      var maxDate = 0;
 
-      // Calculate min date of all scheduled events
-      var minDate = (schedules ? schedules.reduce(function (minDate, slot) {
-        return timeService.compare(slot.start, 'isBefore', minDate);
-      }, now) : now).startOf('week');
+      if (!options.minDate) {
+        // Calculate min date of all scheduled events
+        minDate = (schedules ? schedules.reduce(function (minDate, slot) {
+          return timeService.compare(slot.start, 'isBefore', minDate);
+        }, now) : now).startOf('week');
+      }else{
+        minDate = options.minDate;
+      }
 
-      // Calculate max date of all scheduled events
-      var maxDate = (schedules ? schedules.reduce(function (maxDate, slot) {
-        return timeService.compare(slot.end, 'isAfter', maxDate);
-      }, now) : now).clone().add(1, 'year').endOf('week');
-
+      if (!options.maxDate) {
+        // Calculate max date of all scheduled events
+        maxDate = (schedules ? schedules.reduce(function (maxDate, slot) {
+          return timeService.compare(slot.end, 'isAfter', maxDate);
+        }, now) : now).clone().add(1, 'year').endOf('week');
+      }else{
+        maxDate = options.maxDate;
+      }
       // Calculate nb of weeks covered by minDate => maxDate
       var nbWeeks = timeService.weekDiff(minDate, maxDate);
 
@@ -652,7 +661,8 @@ angular.module('weeklySchedulerI18N')
         'de-de': {month: 'Monat', weekNb: 'Wochenummer', addNew: 'Hinzufügen'},
         'en-gb': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
         'en-us': {month: 'Month', weekNb: 'Week #', addNew: 'Add'},
-        'fr-fr': {month: 'Mois', weekNb: 'N° de semaine', addNew: 'Ajouter'}
+        'fr-fr': {month: 'Mois', weekNb: 'N° de semaine', addNew: 'Ajouter'},
+        'lt-lt': {month: 'Mėnesis', weekNb: 'Savaites nr', addNew: 'Pridėti'},
       }
     };
 
@@ -776,16 +786,16 @@ angular.module('ngWeeklySchedulerTemplates', ['ng-weekly-scheduler/views/multi-s
 
 angular.module('ng-weekly-scheduler/views/multi-slider.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/multi-slider.html',
-    '<div class="slot ghost" ng-show="item.editable !== false && (!schedulerCtrl.config.monoSchedule || !item.schedules.length)">{{schedulerCtrl.config.labels.addNew || \'Add New\'}}</div><weekly-slot class=slot ng-class="{disable: item.editable === false}" ng-repeat="schedule in item.schedules" ng-model=schedule ng-model-options="{ updateOn: \'default blur\', debounce: { \'default\': 500, \'blur\': 0 } }"></weekly-slot>');
+    '<div class="slot ghost" ng-show="item.editable !== false && (!schedulerCtrl.config.monoSchedule || !item.schedules.length)">{{schedulerCtrl.config.labels.addNew || \'Add New\'}}</div><weekly-slot class=slot ng-class="{disable: item.editable === false, \'{{schedule.className}}\': schedule.className}" ng-repeat="schedule in item.schedules" ng-model=schedule ng-model-options="{ updateOn: \'default blur\', debounce: { \'default\': 500, \'blur\': 0 } }"></weekly-slot>');
 }]);
 
 angular.module('ng-weekly-scheduler/views/weekly-scheduler.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/weekly-scheduler.html',
-    '<div class=labels><div class="srow text-right">{{schedulerCtrl.config.labels.month || \'Month\'}}</div><div class="srow text-right">{{schedulerCtrl.config.labels.weekNb || \'Week number\'}}</div><div class=schedule-animate ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class="srow schedule-animate" ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider index={{$index}}></multi-slider></div></div></div>');
+    '<div class=labels><div class="srow text-right">{{schedulerCtrl.config.labels.month || \'Month\'}}</div><div ng-show=schedulerCtrl.config.showWeeks class="srow text-right">{{schedulerCtrl.config.labels.weekNb || \'Week number\'}}</div><div class=schedule-animate ng-repeat="item in schedulerCtrl.items" inject></div></div><div class=schedule-area-container><div class=schedule-area><div class="srow timestamps"><monthly-grid class=grid-container></monthly-grid></div><div ng-show=schedulerCtrl.config.showWeeks class="srow timestamps"><weekly-grid class=grid-container></weekly-grid></div><div class="srow schedule-animate" ng-repeat="item in schedulerCtrl.items"><weekly-grid class="grid-container striped" no-text></weekly-grid><multi-slider index={{$index}}></multi-slider></div></div></div>');
 }]);
 
 angular.module('ng-weekly-scheduler/views/weekly-slot.html', []).run(['$templateCache', function($templateCache) {
   $templateCache.put('ng-weekly-scheduler/views/weekly-slot.html',
-    '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div><div class=remove><span class="glyphicon glyphicon-remove"></span></div></div>');
+    '<div title="{{schedule.start | date}} - {{schedule.end | date}}"><div class="handle left" ondrag=resize ondragstart=startResizeStart ondragstop=endDrag handle></div><div ng-class="{hidden: schedulerCtrl.config.showSlotDate == false}" ondrag=drag ondragstart=startDrag ondragstop=endDrag handle>{{schedule.start | date}} - {{schedule.end | date}}</div><div class="handle right" ondrag=resize ondragstart=startResizeEnd ondragstop=endDrag handle></div><div ng-class="{hidden: schedulerCtrl.config.showSlotDate == false}" class=remove><span class="glyphicon glyphicon-remove"></span></div></div>');
 }]);
 }( window ));

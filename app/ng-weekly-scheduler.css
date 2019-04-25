@@ -102,6 +102,16 @@ multi-slider weekly-slot {
   background: #4eb8d5;
 }
 
+multi-slider weekly-slot.red{
+  background-color : #ff7777 !important;
+}
+multi-slider weekly-slot.green{
+  background-color : #b0d877 !important;
+}
+multi-slider weekly-slot.blue{
+  background-color : #93cbf9 !important;
+}
+
 multi-slider weekly-slot.disable {
   cursor: not-allowed;
   color: #666;

@@ -1,7 +1,7 @@
 <div class="slot ghost" ng-show="item.editable !== false && (!schedulerCtrl.config.monoSchedule || !item.schedules.length)">{{schedulerCtrl.config.labels.addNew || 'Add New'}}</div>
 
 <weekly-slot class="slot"
-             ng-class="{disable: item.editable === false}"
+             ng-class="{disable: item.editable === false, '{{schedule.className}}': schedule.className}"
              ng-repeat="schedule in item.schedules"
              ng-model="schedule"
              ng-model-options="{ updateOn: 'default blur', debounce: { 'default': 500, 'blur': 0 } }"></weekly-slot>
