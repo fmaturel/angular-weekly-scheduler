@@ -16,6 +16,7 @@ angular.module('demoApp', ['ngAnimate', 'weeklyScheduler', 'weeklySchedulerI18N'
         options: {
           /*monoSchedule: true*/
           /*showWeeks: false,*/
+          /*showSlotDate: false,*/
           /*minDate:moment('2015-10-27'),*/
           /*maxDate:moment('2016-05-27'),*/
         },

@@ -65,6 +65,7 @@ This directive displays a weekly item scheduler. You can see, add and modify ite
 ### Options
 
 You can set `showWeeks` to `false` to hide week line.<br>
+You can set `showSlotDate` to `false` to hide slot date interval.<br>
 You can set `minDate` to limit the schedulers start date.<br>
 You can set `maxDate` to limit the schedulers end date.<br>
 
